@@ -1,0 +1,7 @@
+node_modules/
+*lock*
+.env
+.vscode
+dist
+XXXXXXXXXXXXXXXX.txt
+.vercel
