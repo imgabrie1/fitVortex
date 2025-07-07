@@ -10,7 +10,7 @@ export class MicroCycleVolume {
   @ManyToOne(() => MicroCycle, cycle => cycle.volumes)
   microCycle: MicroCycle;
 
-  @Column({ type: "enum", length: 50 })
+  @Column({ type: "enum", enum: MuscleGroup })
   muscleGroup: MuscleGroup;
 
   @Column({ type: "int" })
