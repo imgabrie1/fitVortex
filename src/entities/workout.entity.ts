@@ -3,10 +3,10 @@ import { User } from "./user.entity";
 
 @Entity()
 export class Workout {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column()
+  @Column({ type: "varchar", length: 50 })
   name: string;
 
   @ManyToOne(() => User, user => user.workouts)
