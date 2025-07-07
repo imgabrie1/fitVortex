@@ -4,18 +4,18 @@ import { MicroCycleVolume } from "./microCycleVolume.entity";
 
 @Entity()
 export class MicroCycle {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => MacroCycle, macro => macro.microCycles)
+  @ManyToOne(() => MacroCycle, macroCycle => macroCycle.microCycles)
   macroCycle: MacroCycle;
 
-  @Column({ type: 'date' })
-  startDate: string;
+  @Column({ type: "date" })
+  startDate: Date | string;
 
-  @Column({ type: 'date' })
-  endDate: string;
+  @Column({ type: "date" })
+  endDate: Date | string;
 
-  @OneToMany(() => MicroCycleVolume, v => v.microCycle, { cascade: true })
+  @OneToMany(() => MicroCycleVolume, volume => volume.microCycle, { cascade: true })
   volumes: MicroCycleVolume[];
 }
