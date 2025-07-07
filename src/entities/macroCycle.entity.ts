@@ -1,0 +1,27 @@
+import { Entity, PrimaryGeneratedColumn, ManyToOne, Column, OneToMany } from "typeorm";
+import { MicroCycle } from "./microCycle.entity";
+import { User } from "./user.entity";
+import { MacroCycleVolume } from "./macroCycleVolume.entity";
+
+@Entity()
+export class MacroCycle {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @ManyToOne(() => User, user => user.macroCycles)
+  user: User;
+
+  @Column({ type: 'date' })
+  startDate: string;
+
+  @Column({ type: 'date' })
+  endDate: string;
+
+  @OneToMany(() => MicroCycle, mc => mc.macroCycle, { cascade: true })
+  microCycles: MicroCycle[];
+
+  @OneToMany(() => MacroCycleVolume, v => v.macroCycle, { cascade: true })
+  volumes: MacroCycleVolume[];
+}
+
+export type VolumeRecommendation = 'up' | 'down' | 'same';
