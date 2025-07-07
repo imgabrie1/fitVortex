@@ -5,23 +5,23 @@ import { MacroCycleVolume } from "./macroCycleVolume.entity";
 
 @Entity()
 export class MacroCycle {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @ManyToOne(() => User, user => user.macroCycles)
   user: User;
 
-  @Column({ type: 'date' })
+  @Column({ type: "date" })
   startDate: string;
 
-  @Column({ type: 'date' })
+  @Column({ type: "date" })
   endDate: string;
 
-  @OneToMany(() => MicroCycle, mc => mc.macroCycle, { cascade: true })
+  @OneToMany(() => MicroCycle, microCycle => microCycle.macroCycle, { cascade: true })
   microCycles: MicroCycle[];
 
-  @OneToMany(() => MacroCycleVolume, v => v.macroCycle, { cascade: true })
+  @OneToMany(() => MacroCycleVolume, volume => volume.macroCycle, { cascade: true })
   volumes: MacroCycleVolume[];
 }
 
-export type VolumeRecommendation = 'up' | 'down' | 'same';
+export type VolumeRecommendation = "up" | "down" | "same";

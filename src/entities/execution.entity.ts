@@ -5,7 +5,7 @@ import { MicroCycle } from "./microCycle.entity";
 
 @Entity()
 export class Execution {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @ManyToOne(() => Workout)
@@ -14,8 +14,8 @@ export class Execution {
   @ManyToOne(() => MicroCycle)
   microCycle: MicroCycle;
 
-  @Column({ type: 'timestamp' })
-  date: Date;
+  @Column({ type: "date" })
+  date: Date | string;
 
   @OneToMany(() => ExecutionSet, set => set.execution, { cascade: true })
   sets: ExecutionSet[];
