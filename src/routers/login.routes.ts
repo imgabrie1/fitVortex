@@ -6,3 +6,5 @@ import { createLoginSchema } from "../schemas/login.schema";
 const loginRoutes: Router = Router()
 
 loginRoutes.post("/", ensureDataIsValidMiddleware(createLoginSchema), createLoginController)
+
+export default loginRoutes
