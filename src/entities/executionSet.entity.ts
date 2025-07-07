@@ -13,7 +13,7 @@ export class ExecutionSet {
   @Column({ type: "varchar" })
   exerciseName: string;
 
-  @Column()
+  @Column({type: "enum", enum: MuscleGroup})
   muscleGroup: MuscleGroup;
 
   @Column({ type: "int" })
