@@ -1,23 +1,24 @@
 import { Entity, PrimaryGeneratedColumn, ManyToOne, Column } from "typeorm";
 import { Execution } from "./execution.entity";
+import { MuscleGroup } from "../enum/muscleGroup.enum";
 
 @Entity()
 export class ExecutionSet {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => Execution, exec => exec.sets)
+  @ManyToOne(() => Execution, execution => execution.sets)
   execution: Execution;
 
-  @Column()
+  @Column({ type: "varchar" })
   exerciseName: string;
 
-  @Column()
-  muscleGroup: string;
+  @Column({type: "enum", enum: MuscleGroup})
+  muscleGroup: MuscleGroup;
 
-  @Column({ type: 'int' })
+  @Column({ type: "int" })
   reps: number;
 
-  @Column({ type: 'float' })
+  @Column({ type: "float" })
   weight: number;
 }
