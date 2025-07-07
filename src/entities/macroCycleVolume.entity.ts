@@ -10,7 +10,7 @@ export class MacroCycleVolume {
   @ManyToOne(() => MacroCycle, cycle => cycle.volumes)
   macroCycle: MacroCycle;
 
-  @Column({ type: "enum" })
+  @Column({ type: "enum", enum: MuscleGroup })
   muscleGroup: MuscleGroup;
 
   @Column({ type: "int" })
