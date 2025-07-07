@@ -14,12 +14,12 @@ const createLoginService = async (loginData: iLogin): Promise<string> => {
   });
 
   if (!user) {
-    throw new AppError("email ou senha inválidas", 401);
+    throw new AppError("Credenciais inválidas", 401);
   }
 
   const passwordMatch = await compare(loginData.password, user.password);
   if (!passwordMatch) {
-    throw new AppError("senhas não são iguais", 401);
+    throw new AppError("As senhas não coincidem. Insira-os novamente", 401);
   }
 
   const token: string = jwt.sign(
