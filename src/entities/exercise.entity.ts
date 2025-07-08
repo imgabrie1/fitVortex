@@ -11,13 +11,13 @@ export class Exercise {
     name: string
 
     @Column({ type: "varchar", nullable: true })
-    description: string
+    description: string | null
 
     @Column({ type: "enum", enum: MuscleGroup })
     primaryMuscle: MuscleGroup
 
     @Column({ type: "enum", enum: MuscleGroup, nullable: true })
-    secondaryMuscle: MuscleGroup
+    secondaryMuscle: MuscleGroup | null
 
     @OneToMany(()=> ExecutionSet, set => set.exercise)
     executionSets: ExecutionSet[]
