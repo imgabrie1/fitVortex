@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
-import { User } from "./user.entity";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, ManyToMany, JoinTable } from "typeorm";
+import { MicroCycle } from "./microCycle.entity";
+import { Exercise } from "./exercise.entity";
 
 @Entity()
 export class Workout {
@@ -9,7 +10,10 @@ export class Workout {
   @Column({ type: "varchar", length: 50 })
   name: string;
 
-  @ManyToOne(() => User, user => user.workouts)
-  user: User;
+  @ManyToOne(() => MicroCycle, microCycle => microCycle.workouts)
+  microCycle: MicroCycle;
 
+  @ManyToMany(() => Exercise)
+  @JoinTable()
+  exercises: Exercise[];
 }

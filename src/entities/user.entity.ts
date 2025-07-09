@@ -12,6 +12,7 @@ import {
 import { MacroCycle } from "./macroCycle.entity";
 import { Workout } from "./workout.entity";
 import { getRounds, hashSync } from "bcryptjs";
+import { MicroCycle } from "./microCycle.entity";
 
 @Entity()
 export class User {
@@ -39,8 +40,8 @@ export class User {
   @DeleteDateColumn({ type: "date" })
   deletedAt: Date | string;
 
-  @OneToMany(() => Workout, (workout) => workout.user)
-  workouts: Workout[];
+  @OneToMany(() => MicroCycle, (microCycle) => microCycle.user)
+  microCycles: MicroCycle[];
 
   @OneToMany(() => MacroCycle, (macroCycle) => macroCycle.user)
   macroCycles: MacroCycle[];
