@@ -1,4 +1,3 @@
-// src/interfaces/microCycle.interface.ts
 import { z } from "zod";
 import { createMicroCycleSchema } from "../schemas/microCycle.schema";
 

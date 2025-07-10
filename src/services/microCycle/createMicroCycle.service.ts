@@ -1,4 +1,3 @@
-// src/services/microCycle/createMicroCycle.service.ts
 import { AppDataSource } from "../../data-source";
 import { MicroCycle } from "../../entities/microCycle.entity";
 import { User } from "../../entities/user.entity";
