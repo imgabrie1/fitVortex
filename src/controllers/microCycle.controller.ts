@@ -1,10 +1,6 @@
 import { Request, Response } from "express";
 import { addWorkoutsToMicroCycleService } from "../services/microCycle/addWorkoutsToMicroCycle.service";
 import { createMicroCycleService } from "../services/microCycle/createMicroCycle.service";
-import {
-  iAddWorkoutsToMicroCycle,
-  iCreateMicroCycle,
-} from "../interfaces/microCycle.interface";
 import { returnMicroCycleSchema } from "../schemas/microCycle.schema";
 
 
@@ -19,10 +15,13 @@ export const createMicroCycleController = async (
 
   const safe = {
     id: micro.id,
-    startDate: micro.createdAt,
+    createdAt: micro.createdAt,
     trainingDays: micro.trainingDays,
-    macroCycleId: micro.macroCycleId ?? null,
-    user: { id: micro.userId }
+    user: {
+    id:    micro.user.id,
+    name:  micro.user.name,
+    email: micro.user.email,
+  },
   };
 
   const output = returnMicroCycleSchema.parse(safe);
@@ -34,13 +33,12 @@ export const addWorkoutsToMicroCycleController = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const { microCycleId } = req.params;
-  const workoutData: iAddWorkoutsToMicroCycle = req.body;
+  const { microCycleId, workoutId } = req.params;
   const userId = req.user.id;
 
   const updatedMicroCycle = await addWorkoutsToMicroCycleService(
     microCycleId,
-    workoutData,
+    workoutId,
     userId
   );
 
