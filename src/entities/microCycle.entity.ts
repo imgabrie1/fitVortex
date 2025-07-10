@@ -1,4 +1,3 @@
-// src/entities/microCycle.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
