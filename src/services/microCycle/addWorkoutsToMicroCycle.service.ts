@@ -1,12 +1,12 @@
+import { In } from "typeorm";
 import { AppDataSource } from "../../data-source";
 import { MicroCycle } from "../../entities/microCycle.entity";
 import { Workout } from "../../entities/workout.entity";
 import { AppError } from "../../errors";
-import { iAddWorkoutsToMicroCycle } from "../../interfaces/microCycle.interface";
 
 export const addWorkoutsToMicroCycleService = async (
   microCycleId: string,
-  workoutData: iAddWorkoutsToMicroCycle,
+  workoutId: string,
   userId: string
 ): Promise<MicroCycle> => {
   const microCycleRepository = AppDataSource.getRepository(MicroCycle);
@@ -18,20 +18,25 @@ export const addWorkoutsToMicroCycleService = async (
   });
 
   if (!microCycle) {
-    throw new AppError("MicroCycle not found", 404);
+    throw new AppError("Micro ciclo não encontrado", 404);
   }
 
   if (microCycle.user.id !== userId) {
-    throw new AppError("You don't have permission to add workouts to this microCycle", 403);
+    throw new AppError(
+      "Não pode adicionar treinos em micro ciclos terceiros",
+      403
+    );
   }
 
-  const workoutsToAdd = await workoutRepository.findByIds(workoutData.workoutIds);
+  const workoutToAdd = await workoutRepository.findOneBy({
+    id: workoutId
+  });
 
-  if (workoutsToAdd.length !== workoutData.workoutIds.length) {
-    throw new AppError("One or more workouts not found", 404);
+  if (!workoutToAdd) {
+    throw new AppError("Workout not found", 404);
   }
 
-  microCycle.workouts = [...microCycle.workouts, ...workoutsToAdd];
+  microCycle.workouts = [...microCycle.workouts, workoutToAdd];
 
   await microCycleRepository.save(microCycle);
 

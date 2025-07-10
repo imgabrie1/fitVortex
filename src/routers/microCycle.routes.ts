@@ -2,7 +2,7 @@ import { Router } from "express";
 import { addWorkoutsToMicroCycleController, createMicroCycleController } from "../controllers/microCycle.controller";
 import ensureDataIsValidMiddleware from "../middlewares/ensureDataIsValid.middleware";
 import ensureUserIsAuthenticatedMiddleware from "../middlewares/ensureUserIsAuthenticated.middleware";
-import { addWorkoutsToMicroCycleSchema, createMicroCycleSchema } from "../schemas/microCycle.schema";
+import { createMicroCycleSchema } from "../schemas/microCycle.schema";
 
 const microCycleRoutes: Router = Router();
 
@@ -14,9 +14,8 @@ microCycleRoutes.post(
 );
 
 microCycleRoutes.patch(
-  "/:microCycleId/workouts",
+  "/:microCycleId/workouts/:workoutId",
   ensureUserIsAuthenticatedMiddleware,
-  ensureDataIsValidMiddleware(addWorkoutsToMicroCycleSchema),
   addWorkoutsToMicroCycleController
 );
 
