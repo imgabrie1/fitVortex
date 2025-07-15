@@ -13,7 +13,7 @@ export class Workout {
   @ManyToOne(() => MicroCycle, microCycle => microCycle.workouts)
   microCycle: MicroCycle;
 
-  @ManyToMany(() => Exercise)
+  @ManyToMany(() => Exercise, { eager: true })
   @JoinTable()
   exercises: Exercise[];
 }
