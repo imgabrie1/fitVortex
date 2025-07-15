@@ -54,4 +54,9 @@ export class User {
       this.password = hashSync(this.password, 10);
     }
   }
+
+  toJSON() {
+    const { password, ...user } = this;
+    return user;
+  }
 }
