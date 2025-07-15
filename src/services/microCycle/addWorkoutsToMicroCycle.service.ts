@@ -1,4 +1,3 @@
-import { In } from "typeorm";
 import { AppDataSource } from "../../data-source";
 import { MicroCycle } from "../../entities/microCycle.entity";
 import { Workout } from "../../entities/workout.entity";
@@ -33,7 +32,7 @@ export const addWorkoutsToMicroCycleService = async (
   });
 
   if (!workoutToAdd) {
-    throw new AppError("Workout not found", 404);
+    throw new AppError("Treino não achado", 404);
   }
 
   microCycle.workouts = [...microCycle.workouts, workoutToAdd];

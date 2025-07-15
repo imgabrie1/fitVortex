@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne, Column, OneToMany } from "typeorm";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  Column,
+  OneToMany,
+} from "typeorm";
 import { MicroCycle } from "./microCycle.entity";
 import { User } from "./user.entity";
 import { MacroCycleVolume } from "./macroCycleVolume.entity";
@@ -8,7 +14,7 @@ export class MacroCycle {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => User, user => user.macroCycles)
+  @ManyToOne(() => User, (user) => user.macroCycles)
   user: User;
 
   @Column({ type: "date" })
@@ -17,10 +23,17 @@ export class MacroCycle {
   @Column({ type: "date" })
   endDate: string;
 
-  @OneToMany(() => MicroCycle, microCycle => microCycle.macroCycle, { cascade: true })
+  @Column({ type: "int" })
+  microQuantity: number;
+
+  @OneToMany(() => MicroCycle, (microCycle) => microCycle.macroCycle, {
+    cascade: true,
+  })
   microCycles: MicroCycle[];
 
-  @OneToMany(() => MacroCycleVolume, volume => volume.macroCycle, { cascade: true })
+  @OneToMany(() => MacroCycleVolume, (volume) => volume.macroCycle, {
+    cascade: true,
+  })
   volumes: MacroCycleVolume[];
 }
 
