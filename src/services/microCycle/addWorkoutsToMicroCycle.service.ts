@@ -8,10 +8,10 @@ export const addWorkoutsToMicroCycleService = async (
   workoutId: string,
   userId: string
 ): Promise<MicroCycle> => {
-  const microCycleRepository = AppDataSource.getRepository(MicroCycle);
-  const workoutRepository = AppDataSource.getRepository(Workout);
+  const microCycleRepo = AppDataSource.getRepository(MicroCycle);
+  const workoutRepo = AppDataSource.getRepository(Workout);
 
-  const microCycle = await microCycleRepository.findOne({
+  const microCycle = await microCycleRepo.findOne({
     where: { id: microCycleId },
     relations: ["workouts", "user"],
   });
@@ -27,17 +27,17 @@ export const addWorkoutsToMicroCycleService = async (
     );
   }
 
-  const workoutToAdd = await workoutRepository.findOneBy({
+  const workoutToAdd = await workoutRepo.findOneBy({
     id: workoutId
   });
 
   if (!workoutToAdd) {
-    throw new AppError("Treino não achado", 404);
+    throw new AppError("Treino não encontrado", 404);
   }
 
   microCycle.workouts = [...microCycle.workouts, workoutToAdd];
 
-  await microCycleRepository.save(microCycle);
+  await microCycleRepo.save(microCycle);
 
   return microCycle;
 };

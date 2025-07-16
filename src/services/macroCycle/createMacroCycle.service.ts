@@ -15,7 +15,8 @@ export const createMacroCycleService = async (data: ICreateMacroCycle, userId: s
     const newMacro = macroRepo.create({
         microQuantity: data.microQuantity,
         startDate: data.startDate,
-        endDate: data.endDate
+        endDate: data.endDate,
+        user: user
     })
 
     await macroRepo.save(newMacro)
