@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class InitialMigration1752612530963 implements MigrationInterface {
-    name = 'InitialMigration1752612530963'
+export class InitialMigrations1752701854677 implements MigrationInterface {
+    name = 'InitialMigrations1752701854677'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`CREATE TABLE "user" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "email" character varying(50) NOT NULL, "name" character varying(50) NOT NULL, "password" character varying(125) NOT NULL, "admin" boolean NOT NULL DEFAULT false, "createdAt" date NOT NULL DEFAULT now(), "updatedAt" date NOT NULL DEFAULT now(), "deletedAt" date, CONSTRAINT "PK_cace4a159ff9f2512dd42373760" PRIMARY KEY ("id"))`);
@@ -22,9 +22,9 @@ export class InitialMigration1752612530963 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "macro_cycle_volume" ADD CONSTRAINT "FK_d5bb7ce3b595e5c4be74a2b285d" FOREIGN KEY ("macroCycleId") REFERENCES "macro_cycle"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "macro_cycle" ADD CONSTRAINT "FK_8a71eacd0731ee9d5f9418332ab" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "micro_cycle_volume" ADD CONSTRAINT "FK_a93d3dd63767b67e9427cc64612" FOREIGN KEY ("microCycleId") REFERENCES "micro_cycle"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "micro_cycle" ADD CONSTRAINT "FK_93bfe27710a8663734b1740b679" FOREIGN KEY ("macroCycleId") REFERENCES "macro_cycle"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "micro_cycle" ADD CONSTRAINT "FK_93bfe27710a8663734b1740b679" FOREIGN KEY ("macroCycleId") REFERENCES "macro_cycle"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "micro_cycle" ADD CONSTRAINT "FK_c67972fa530d26c3eb1c7bc587b" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "workout" ADD CONSTRAINT "FK_53d9dadfc5e7cc661f8b538888d" FOREIGN KEY ("microCycleId") REFERENCES "micro_cycle"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "workout" ADD CONSTRAINT "FK_53d9dadfc5e7cc661f8b538888d" FOREIGN KEY ("microCycleId") REFERENCES "micro_cycle"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "workout_exercises_exercise" ADD CONSTRAINT "FK_ebbf4b6ada07370d4fd4cacc27d" FOREIGN KEY ("workoutId") REFERENCES "workout"("id") ON DELETE CASCADE ON UPDATE CASCADE`);
         await queryRunner.query(`ALTER TABLE "workout_exercises_exercise" ADD CONSTRAINT "FK_0bb8852de78dba0857f37cae564" FOREIGN KEY ("exerciseId") REFERENCES "exercise"("id") ON DELETE CASCADE ON UPDATE CASCADE`);
     }

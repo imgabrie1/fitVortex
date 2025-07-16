@@ -10,7 +10,7 @@ export class Workout {
   @Column({ type: "varchar", length: 50 })
   name: string;
 
-  @ManyToOne(() => MicroCycle, microCycle => microCycle.workouts)
+  @ManyToOne(() => MicroCycle, microCycle => microCycle.workouts, { onDelete: 'CASCADE' })
   microCycle: MicroCycle;
 
   @ManyToMany(() => Exercise, { eager: true })
