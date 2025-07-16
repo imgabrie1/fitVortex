@@ -17,7 +17,7 @@ export class MicroCycle {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => MacroCycle, m => m.microCycles, { nullable: true })
+  @ManyToOne(() => MacroCycle, m => m.microCycles, { nullable: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: "macroCycleId" })
   macroCycle?: MacroCycle;
 

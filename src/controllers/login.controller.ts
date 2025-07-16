@@ -9,9 +9,9 @@ const createLoginController = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const userRepository = AppDataSource.getRepository(User);
+  const userRepo = AppDataSource.getRepository(User);
   const loginData: iLogin = req.body;
-  const user = await userRepository.findOne({
+  const user = await userRepo.findOne({
     where: { email: loginData.email },
   });
 
