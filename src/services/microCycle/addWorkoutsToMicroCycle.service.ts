@@ -27,8 +27,13 @@ export const addWorkoutsToMicroCycleService = async (
     );
   }
 
+  const currentCount = microCycle.workouts.length;
+  if (currentCount >= microCycle.trainingDays) {
+    throw new AppError("Limite de micros atingido", 403);
+  }
+
   const workoutToAdd = await workoutRepo.findOneBy({
-    id: workoutId
+    id: workoutId,
   });
 
   if (!workoutToAdd) {
