@@ -7,7 +7,7 @@ export const createMacroCycleSchema = z.object({
   endDate:      z.string().regex(/^\d{2}-\d{2}-\d{4}$/),
 });
 
-export const macroCycleSchema = z.object({
+export const returnMacroCycleSchema = z.object({
   id: z.string().uuid(),
   endDate: z.string().regex(/^\d{2}-\d{2}-\d{4}$/),
   microQuantity: z.number().int().positive(),

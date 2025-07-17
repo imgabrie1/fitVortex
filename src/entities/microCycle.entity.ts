@@ -11,18 +11,20 @@ import { MacroCycle } from "./macroCycle.entity";
 import { MicroCycleVolume } from "./microCycleVolume.entity";
 import { User } from "./user.entity";
 import { Workout } from "./workout.entity";
+import { MacroCycleItem } from "./macroCycleItem.entity";
 
 @Entity()
 export class MicroCycle {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => MacroCycle, m => m.microCycles, { nullable: true, onDelete: 'CASCADE' })
-  @JoinColumn({ name: "macroCycleId" })
-  macroCycle?: MacroCycle;
+  // @ManyToOne(() => MacroCycle, m => m.microCycles, { nullable: true, onDelete: 'SET NULL' })
+  // @JoinColumn({ name: "macroCycleId" })
+  // macroCycle?: MacroCycle;
 
-  @Column("uuid", { nullable: true })
-  macroCycleId?: string;
+  @OneToMany(() => MacroCycleItem, (item) => item.microCycle)
+  items: MacroCycleItem[];
+
 
   @CreateDateColumn({ type: "date" })
   createdAt: Date | string;
