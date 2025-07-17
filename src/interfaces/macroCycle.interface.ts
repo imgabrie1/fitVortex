@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { macroCycleSchema, createMacroCycleSchema } from "../schemas/macroCycle.schema";
+import { returnMacroCycleSchema, createMacroCycleSchema } from "../schemas/macroCycle.schema";
 
-export type IMacroCycle = z.infer<typeof macroCycleSchema>;
+export type IMacroCycle = z.infer<typeof returnMacroCycleSchema>;
 export type ICreateMacroCycle = z.infer<typeof createMacroCycleSchema>;

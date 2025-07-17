@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { macroCycleSchema } from "../schemas/macroCycle.schema"
+import { returnMacroCycleSchema } from "../schemas/macroCycle.schema"
 import { createMacroCycleService } from "../services/macroCycle/createMacroCycle.service"
 import { addMicroCycleToMacroCycleService } from "../services/macroCycle/addMicroCycleToMacroCycle.service"
 import { deleteMacroCycleService } from "../services/macroCycle/deleteMacroCycle.service";
@@ -10,7 +10,7 @@ export const createMacroCycleController = async (req: Request, res: Response): P
 
     const macro = await createMacroCycleService(body, userId)
 
-    const output = macroCycleSchema.parse(macro)
+    const output = returnMacroCycleSchema.parse(macro)
     return res.status(201).json(output)
 }
 
