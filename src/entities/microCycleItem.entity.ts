@@ -4,19 +4,19 @@ import {
   ManyToOne,
   CreateDateColumn
 } from "typeorm";
-import { MacroCycle } from "./macroCycle.entity";
 import { MicroCycle } from "./microCycle.entity";
+import { Workout } from "./workout.entity";
 
 @Entity()
-export class MacroCycleItem {
+export class MicroCycleItem {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => MacroCycle, macro => macro.items, { onDelete: 'CASCADE' })
-  macroCycle: MacroCycle;
-
-  @ManyToOne(() => MicroCycle, micro => micro.macroItems, { eager: true })
+  @ManyToOne(() => MicroCycle, mc => mc.cycleItems, { onDelete: 'CASCADE' })
   microCycle: MicroCycle;
+
+  @ManyToOne(() => Workout, w => w.cycleItems, { eager: true })
+  workout: Workout;
 
   @CreateDateColumn()
   createdAt: Date;
