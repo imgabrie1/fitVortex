@@ -1,21 +1,20 @@
 import {
   Entity,
   PrimaryGeneratedColumn,
-  ManyToOne,
   Column,
-  OneToMany,
+  ManyToOne,
+  OneToMany
 } from "typeorm";
-import { MicroCycle } from "./microCycle.entity";
 import { User } from "./user.entity";
-import { MacroCycleVolume } from "./macroCycleVolume.entity";
 import { MacroCycleItem } from "./macroCycleItem.entity";
+import { MacroCycleVolume } from "./macroCycleVolume.entity";
 
 @Entity()
 export class MacroCycle {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => User, (user) => user.macroCycles)
+  @ManyToOne(() => User, user => user.macroCycles)
   user: User;
 
   @Column({ type: "date" })
@@ -27,13 +26,9 @@ export class MacroCycle {
   @Column({ type: "int" })
   microQuantity: number;
 
-  @OneToMany(() => MacroCycleItem, (item) => item.macroCycle, { cascade: true })
+  @OneToMany(() => MacroCycleItem, item => item.macroCycle, { cascade: true })
   items: MacroCycleItem[];
 
-  @OneToMany(() => MacroCycleVolume, (volume) => volume.macroCycle, {
-    cascade: true,
-  })
+  @OneToMany(() => MacroCycleVolume, volume => volume.macroCycle, { cascade: true })
   volumes: MacroCycleVolume[];
 }
-
-export type VolumeRecommendation = "up" | "down" | "same";

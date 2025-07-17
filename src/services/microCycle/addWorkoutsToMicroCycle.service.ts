@@ -1,6 +1,7 @@
 import { AppDataSource } from "../../data-source";
 import { MicroCycle } from "../../entities/microCycle.entity";
 import { Workout } from "../../entities/workout.entity";
+import { MicroCycleItem } from "../../entities/microCycleItem.entity";
 import { AppError } from "../../errors";
 
 export const addWorkoutsToMicroCycleService = async (
@@ -8,41 +9,32 @@ export const addWorkoutsToMicroCycleService = async (
   workoutId: string,
   userId: string
 ): Promise<MicroCycle> => {
-  const microCycleRepo = AppDataSource.getRepository(MicroCycle);
+  const microRepo   = AppDataSource.getRepository(MicroCycle);
   const workoutRepo = AppDataSource.getRepository(Workout);
+  const itemRepo    = AppDataSource.getRepository(MicroCycleItem);
 
-  const microCycle = await microCycleRepo.findOne({
+  const micro = await microRepo.findOne({
     where: { id: microCycleId },
-    relations: ["workouts", "user"],
+    relations: ["cycleItems", "user"],
   });
+  if (!micro) throw new AppError("Micro ciclo não encontrado", 404);
+  if (micro.user.id !== userId) throw new AppError("Não autorizado", 403);
 
-  if (!microCycle) {
-    throw new AppError("Micro ciclo não encontrado", 404);
+  if (micro.cycleItems.length >= micro.trainingDays) {
+    throw new AppError("Limite de treinos atingido", 403);
   }
 
-  if (microCycle.user.id !== userId) {
-    throw new AppError(
-      "Não pode adicionar treinos em micro ciclos terceiros",
-      403
-    );
-  }
+  const workout = await workoutRepo.findOne({ where: { id: workoutId } });
+  if (!workout) throw new AppError("Treino não encontrado", 404);
 
-  const currentCount = microCycle.workouts.length;
-  if (currentCount >= microCycle.trainingDays) {
-    throw new AppError("Limite de micros atingido", 403);
-  }
+  const newItem = itemRepo.create({ microCycle: micro, workout });
+  await itemRepo.save(newItem);
 
-  const workoutToAdd = await workoutRepo.findOneBy({
-    id: workoutId,
+  const updated = await microRepo.findOne({
+    where: { id: microCycleId },
+    relations: ["user", "volumes", "cycleItems", "cycleItems.workout"],
   });
+  if (!updated) throw new AppError("Erro ao recarregar MicroCycle", 500);
 
-  if (!workoutToAdd) {
-    throw new AppError("Treino não encontrado", 404);
-  }
-
-  microCycle.workouts = [...microCycle.workouts, workoutToAdd];
-
-  await microCycleRepo.save(microCycle);
-
-  return microCycle;
+  return updated;
 };

@@ -10,7 +10,6 @@ import {
   BeforeUpdate,
 } from "typeorm";
 import { MacroCycle } from "./macroCycle.entity";
-import { Workout } from "./workout.entity";
 import { getRounds, hashSync } from "bcryptjs";
 import { MicroCycle } from "./microCycle.entity";
 
