@@ -8,6 +8,7 @@ import {
 import { MicroCycle } from "./microCycle.entity";
 import { User } from "./user.entity";
 import { MacroCycleVolume } from "./macroCycleVolume.entity";
+import { MacroCycleItem } from "./macroCycleItem.entity";
 
 @Entity()
 export class MacroCycle {
@@ -26,10 +27,8 @@ export class MacroCycle {
   @Column({ type: "int" })
   microQuantity: number;
 
-  @OneToMany(() => MicroCycle, (microCycle) => microCycle.macroCycle, {
-    cascade: true,
-  })
-  microCycles: MicroCycle[];
+  @OneToMany(() => MacroCycleItem, (item) => item.macroCycle, { cascade: true })
+  items: MacroCycleItem[];
 
   @OneToMany(() => MacroCycleVolume, (volume) => volume.macroCycle, {
     cascade: true,
