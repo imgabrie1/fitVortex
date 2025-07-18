@@ -1,21 +1,38 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne, Column, OneToMany } from "typeorm";
-import { MacroCycle } from "./macroCycle.entity";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  ManyToOne,
+  CreateDateColumn,
+  JoinColumn
+} from "typeorm";
+import { User } from "./user.entity";
 import { MicroCycleVolume } from "./microCycleVolume.entity";
+import { MacroCycleItem } from "./macroCycleItem.entity";
+import { MicroCycleItem } from "./microCycleItem.entity";
 
 @Entity()
 export class MicroCycle {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => MacroCycle, macroCycle => macroCycle.microCycles)
-  macroCycle: MacroCycle;
+  @OneToMany(() => MacroCycleItem, item => item.microCycle)
+  macroItems: MacroCycleItem[];
 
-  @Column({ type: "date" })
-  startDate: Date | string;
+  @CreateDateColumn({ type: "date" })
+  createdAt: Date | string;
 
-  @Column({ type: "date" })
-  endDate: Date | string;
+  @Column({ type: "int", default: 1 })
+  trainingDays: number;
 
-  @OneToMany(() => MicroCycleVolume, volume => volume.microCycle, { cascade: true })
+  @OneToMany(() => MicroCycleVolume, v => v.microCycle, { cascade: true })
   volumes: MicroCycleVolume[];
+
+  @ManyToOne(() => User, u => u.microCycles, { nullable: false })
+  @JoinColumn({ name: "userId" })
+  user: User;
+
+  @OneToMany(() => MicroCycleItem, item => item.microCycle, { cascade: true })
+  cycleItems: MicroCycleItem[];
 }
