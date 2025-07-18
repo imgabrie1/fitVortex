@@ -10,7 +10,7 @@ export const deleteMacroCycleService = async (
 
   const macroCycle = await macroRepo.findOne({
     where: { id: macroCycleId },
-    relations: ["user", "microCycles"],
+    relations: ["user", "items"],
   });
 
   if (!macroCycle) {
