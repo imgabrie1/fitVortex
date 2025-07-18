@@ -4,8 +4,7 @@ export const userSchema = z.object({
   name: z.string().max(50),
   email: z.string().max(50).email(),
   admin: z.boolean().default(false),
-  password: z.string().max(120),
-  // tem que adicionar o resto (workouts e talvez mais)
+  password: z.string().max(120)
 });
 
 export const returnUserSchema = userSchema

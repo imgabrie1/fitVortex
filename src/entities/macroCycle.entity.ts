@@ -1,6 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne, Column, OneToMany } from "typeorm";
-import { MicroCycle } from "./microCycle.entity";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany
+} from "typeorm";
 import { User } from "./user.entity";
+import { MacroCycleItem } from "./macroCycleItem.entity";
 import { MacroCycleVolume } from "./macroCycleVolume.entity";
 
 @Entity()
@@ -17,11 +23,12 @@ export class MacroCycle {
   @Column({ type: "date" })
   endDate: string;
 
-  @OneToMany(() => MicroCycle, microCycle => microCycle.macroCycle, { cascade: true })
-  microCycles: MicroCycle[];
+  @Column({ type: "int" })
+  microQuantity: number;
+
+  @OneToMany(() => MacroCycleItem, item => item.macroCycle, { cascade: true })
+  items: MacroCycleItem[];
 
   @OneToMany(() => MacroCycleVolume, volume => volume.macroCycle, { cascade: true })
   volumes: MacroCycleVolume[];
 }
-
-export type VolumeRecommendation = "up" | "down" | "same";

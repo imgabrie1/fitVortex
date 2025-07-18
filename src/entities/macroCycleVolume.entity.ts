@@ -1,13 +1,13 @@
 import { Entity, PrimaryGeneratedColumn, ManyToOne, Column } from "typeorm";
-import { MacroCycle, VolumeRecommendation } from "./macroCycle.entity";
 import { MuscleGroup } from "../enum/muscleGroup.enum";
+import { MacroCycle } from "./macroCycle.entity";
 
 @Entity()
 export class MacroCycleVolume {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => MacroCycle, cycle => cycle.volumes)
+  @ManyToOne(() => MacroCycle, (cycle) => cycle.volumes)
   macroCycle: MacroCycle;
 
   @Column({ type: "enum", enum: MuscleGroup })
@@ -19,6 +19,6 @@ export class MacroCycleVolume {
   @Column({ type: "int" })
   changePct: number;
 
-  @Column({ type: "enum", enum: ["up", "same", "down"] })
-  recommendation: VolumeRecommendation;
+  @Column({ type: "enum", enum: ["up", "down", "same"] })
+  recommendation: "up" | "down" | "same";
 }
