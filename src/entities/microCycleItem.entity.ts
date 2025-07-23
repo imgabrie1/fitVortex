@@ -2,10 +2,12 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   ManyToOne,
-  CreateDateColumn
+  CreateDateColumn,
+  OneToMany
 } from "typeorm";
 import { MicroCycle } from "./microCycle.entity";
 import { Workout } from "./workout.entity";
+import { Set } from "./set.entity";
 
 @Entity()
 export class MicroCycleItem {
@@ -17,6 +19,9 @@ export class MicroCycleItem {
 
   @ManyToOne(() => Workout, w => w.cycleItems, { eager: true })
   workout: Workout;
+
+  @OneToMany(() => Set, (set) => set.microCycleItem)
+  sets: Set[];
 
   @CreateDateColumn()
   createdAt: Date;
