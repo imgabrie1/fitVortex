@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken"
 import "dotenv/config"
 
 
-const ensureTokenIsValidMiddleware = (req: Request, res: Response, next: NextFunction): Response | void => {
+const ensureUserIsAuthenticatedMiddleware = (req: Request, res: Response, next: NextFunction): Response | void => {
 
 
     let token = req.headers.authorization
@@ -31,4 +31,4 @@ const ensureTokenIsValidMiddleware = (req: Request, res: Response, next: NextFun
 
 }
 
-export default ensureTokenIsValidMiddleware
+export default ensureUserIsAuthenticatedMiddleware
