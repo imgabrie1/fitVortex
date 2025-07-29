@@ -13,10 +13,10 @@ export const createWorkoutService = async (
   const exerciseRepo = AppDataSource.getRepository(Exercise);
 
   const exercises = await exerciseRepo.findBy({
-    id: In(workoutData.exerciseIds)
+    id: In(workoutData.exerciseIDs)
   });
 
-  if (exercises.length !== workoutData.exerciseIds.length) {
+  if (exercises.length !== workoutData.exerciseIDs.length) {
     throw new AppError("Algum exercício não foi encontrado", 404);
   }
 
@@ -29,7 +29,7 @@ export const createWorkoutService = async (
   const output = {
     id: workout.id,
     name: workout.name,
-    exerciseIds: workoutData.exerciseIds
+    exerciseIDs: workoutData.exerciseIDs
   };
 
   const returnData = returnWorkoutSchema.parse(output);

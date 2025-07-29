@@ -3,15 +3,16 @@ import { addWorkoutsToMicroCycleService } from "../services/microCycle/addWorkou
 import { createMicroCycleService } from "../services/microCycle/createMicroCycle.service";
 import { returnMicroCycleSchema } from "../schemas/microCycle.schema";
 import { deleteMicroCycleService } from "../services/microCycle/deleteMicroCycle.service";
+import { getMicroCycleByIDService } from "../services/microCycle/getMicroCycleById.service";
 
 export const createMicroCycleController = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
   const body = req.body;
-  const userId = req.user!.id;
+  const userID = req.id;
 
-  const micro = await createMicroCycleService(body, userId);
+  const micro = await createMicroCycleService(body, userID);
 
   const safe = {
     id: micro.id,
@@ -32,13 +33,13 @@ export const addWorkoutsToMicroCycleController = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const { microCycleId, workoutId } = req.params;
-  const userId = req.user.id;
+  const { microCycleID, workoutID } = req.params;
+  const userID = req.id;
 
   const updatedMicroCycle = await addWorkoutsToMicroCycleService(
-    microCycleId,
-    workoutId,
-    userId
+    microCycleID,
+    workoutID,
+    userID
   );
 
   return res.status(200).json(updatedMicroCycle);
@@ -48,8 +49,17 @@ export const deleteMicroCycleController = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const { macroCycleId } = req.params;
-  const userId = req.user.id;
-  await deleteMicroCycleService(macroCycleId, userId);
+  const { microCycleID } = req.params;
+  const userID = req.id;
+  await deleteMicroCycleService(microCycleID, userID);
   return res.status(204).send();
+};
+
+export const getMicroCycleByIDController = async (req: Request, res: Response): Promise<Response> => {
+    const { id } = req.params;
+    const userID = req.id;
+
+    const microCycle = await getMicroCycleByIDService(id, userID);
+
+    return res.status(200).json(microCycle);
 };

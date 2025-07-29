@@ -4,13 +4,13 @@ import { AppError } from "../../errors";
 
 
 export const deleteMicroCycleService = async (
-  microCycleId: string,
-  userId: string
+  microCycleID: string,
+  userID: string
 ): Promise<void> => {
   const microRepo = AppDataSource.getRepository(MicroCycle);
 
   const microCycle = await microRepo.findOne({
-    where: { id: microCycleId },
+    where: { id: microCycleID },
     relations: ["user"],
   });
 
@@ -18,7 +18,7 @@ export const deleteMicroCycleService = async (
     throw new AppError("Micro ciclo não encontrado", 404);
   }
 
-  if (microCycle.user.id !== userId) {
+  if (microCycle.user.id !== userID) {
     throw new AppError("Só pode excluir o próprio micro ciclo", 403);
   }
 
