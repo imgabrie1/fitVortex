@@ -1,35 +1,34 @@
-import { Request, Response, NextFunction } from "express";
-import { verify } from "jsonwebtoken";
-import { AppError } from "../errors";
+import { Request, Response, NextFunction } from "express"
+import { AppError } from "../errors"
+import jwt from "jsonwebtoken"
+import "dotenv/config"
 
-interface TokenPayload {
-  sub: string;
-  iat: number;
-  exp: number;
+
+const ensureUserIsAuthenticatedMiddleware = (req: Request, res: Response, next: NextFunction): Response | void => {
+
+
+    let token = req.headers.authorization
+
+    if(!token){
+        throw new AppError("Missing bearer token", 401)
+    }
+
+    token = token.split(" ")[1]
+
+    jwt.verify(token!, process.env.SECRET_KEY!, (error, decoded: any) => {
+        if(error){
+            throw new AppError(error.message, 401)
+        }
+
+
+        req.id = decoded.sub
+        req.admin = decoded.admin
+        req.user = decoded.user
+
+
+        return next()
+    })
+
 }
-
-export const ensureUserIsAuthenticatedMiddleware = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
-    throw new AppError("Token faltando", 401);
-  }
-
-  const [, token] = authHeader.split(" ");
-
-  try {
-    const decoded = verify(token, process.env.SECRET_KEY!) as TokenPayload;
-
-    (req as any).user = { id: decoded.sub };
-
-    return next();
-  } catch {
-    throw new AppError("Token inválido", 401);
-  }
-};
 
 export default ensureUserIsAuthenticatedMiddleware

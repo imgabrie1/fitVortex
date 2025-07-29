@@ -5,31 +5,31 @@ import { Set } from "../../entities/set.entity";
 import { AppError } from "../../errors";
 import { TRecordWorkout } from "../../interfaces/set.interface";
 
-export const recordWorkoutService = async (microCycleId: string, workoutId: string, payload: TRecordWorkout): Promise<MicroCycleItem> => {
-    const microCycleItemRepository = AppDataSource.getRepository(MicroCycleItem);
-    const exerciseRepository = AppDataSource.getRepository(Exercise);
-    const setRepository = AppDataSource.getRepository(Set);
+export const recordWorkoutService = async (microCycleID: string, workoutID: string, payload: TRecordWorkout): Promise<MicroCycleItem> => {
+    const microCycleItemRepo = AppDataSource.getRepository(MicroCycleItem);
+    const exerciseRepo = AppDataSource.getRepository(Exercise);
+    const setRepo = AppDataSource.getRepository(Set);
 
-    const microCycleItem = await microCycleItemRepository.findOne({
+    const microCycleItem = await microCycleItemRepo.findOne({
         where: {
-            microCycle: { id: microCycleId },
-            workout: { id: workoutId },
+            microCycle: { id: microCycleID },
+            workout: { id: workoutID },
         },
         relations: ["workout"],
     });
 
     if (!microCycleItem) {
-        throw new AppError("Micro cycle item not found", 404);
+        throw new AppError("itens do micro ciclo não encontrados", 404);
     }
 
     await Promise.all(payload.exercises.map(async (exerciseData) => {
-        const exercise = await exerciseRepository.findOne({ where: { id: exerciseData.exerciseId } });
+        const exercise = await exerciseRepo.findOne({ where: { id: exerciseData.exerciseID } });
         if (!exercise) {
-            throw new AppError(`Exercise with ID ${exerciseData.exerciseId} not found`, 404);
+            throw new AppError(`Exercício com ID ${exerciseData.exerciseID} não encontrado`, 404);
         }
 
         const setsToCreate = exerciseData.sets.map(setData => {
-            return setRepository.create({
+            return setRepo.create({
                 reps: setData.reps,
                 weight: setData.weight,
                 notes: setData.notes || null,
@@ -38,16 +38,16 @@ export const recordWorkoutService = async (microCycleId: string, workoutId: stri
             });
         });
 
-        await setRepository.save(setsToCreate);
+        await setRepo.save(setsToCreate);
     }));
 
-    const updatedMicroCycleItem = await microCycleItemRepository.findOne({
+    const updatedMicroCycleItem = await microCycleItemRepo.findOne({
         where: { id: microCycleItem.id },
         relations: ["sets", "sets.exercise"],
     });
 
     if (!updatedMicroCycleItem) {
-        throw new AppError("An error occurred while fetching the updated micro cycle item.", 500);
+        throw new AppError("ocorreu um erro ao tentar gravar o treino", 500);
     }
 
     return updatedMicroCycleItem;

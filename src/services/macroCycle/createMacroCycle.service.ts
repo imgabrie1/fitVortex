@@ -5,11 +5,11 @@ import { User } from "../../entities/user.entity";
 import { AppError } from "../../errors";
 import { ICreateMacroCycle } from "../../interfaces/macroCycle.interface";
 
-export const createMacroCycleService = async (data: ICreateMacroCycle, userId: string): Promise<MacroCycle> => {
+export const createMacroCycleService = async (data: ICreateMacroCycle, userID: string): Promise<MacroCycle> => {
     const macroRepo = AppDataSource.getRepository(MacroCycle)
     const userRepo = AppDataSource.getRepository(User)
 
-    const user = await userRepo.findOneBy({id: userId})
+    const user = await userRepo.findOneBy({id: userID})
     if(!user) throw new AppError("Usuário não encontrado", 404)
 
     const newMacro = macroRepo.create({
