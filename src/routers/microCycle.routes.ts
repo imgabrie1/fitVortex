@@ -3,6 +3,7 @@ import {
   addWorkoutsToMicroCycleController,
   createMicroCycleController,
   deleteMicroCycleController,
+  getMicroCycleByIDController,
 } from "../controllers/microCycle.controller";
 import { recordWorkoutController } from "../controllers/recordWorkout.controller";
 import ensureDataIsValidMiddleware from "../middlewares/ensureDataIsValid.middleware";
@@ -20,22 +21,28 @@ microCycleRoutes.post(
 );
 
 microCycleRoutes.patch(
-  "/:microCycleId/workouts/:workoutId",
+  "/:microCycleID/workouts/:workoutID",
   ensureUserIsAuthenticatedMiddleware,
   addWorkoutsToMicroCycleController
 );
 
 microCycleRoutes.patch(
-  "/:microCycleId/workouts/:workoutId/record",
+  "/:microCycleID/workouts/:workoutID/record",
   ensureUserIsAuthenticatedMiddleware,
   ensureDataIsValidMiddleware(recordWorkoutSchema),
   recordWorkoutController
 );
 
 microCycleRoutes.delete(
-  "/:microCycleId",
+  "/:microCycleID",
   ensureUserIsAuthenticatedMiddleware,
   deleteMicroCycleController
+);
+
+microCycleRoutes.get(
+  "/:id",
+  ensureUserIsAuthenticatedMiddleware,
+  getMicroCycleByIDController
 );
 
 export default microCycleRoutes;
