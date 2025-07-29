@@ -3,13 +3,13 @@ import { MacroCycle } from "../../entities/macroCycle.entity";
 import { AppError } from "../../errors";
 
 export const deleteMacroCycleService = async (
-  macroCycleId: string,
-  userId: string
+  macroCycleID: string,
+  userID: string
 ): Promise<void> => {
   const macroRepo = AppDataSource.getRepository(MacroCycle);
 
   const macroCycle = await macroRepo.findOne({
-    where: { id: macroCycleId },
+    where: { id: macroCycleID },
     relations: ["user", "items"],
   });
 
@@ -17,7 +17,7 @@ export const deleteMacroCycleService = async (
     throw new AppError("Macro ciclo não encontrado", 404);
   }
 
-  if (macroCycle.user.id !== userId) {
+  if (macroCycle.user.id !== userID) {
     throw new AppError("Só pode excluir o próprio macro ciclo", 403);
   }
 
