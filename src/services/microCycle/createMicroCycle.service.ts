@@ -6,12 +6,12 @@ import { iCreateMicroCycle } from "../../interfaces/microCycle.interface";
 
 export const createMicroCycleService = async (
   data: iCreateMicroCycle,
-  userId: string
+  userID: string
 ): Promise<MicroCycle> => {
   const microRepo = AppDataSource.getRepository(MicroCycle);
   const userRepo  = AppDataSource.getRepository(User);
 
-  const user = await userRepo.findOneBy({ id: userId });
+  const user = await userRepo.findOneBy({ id: userID });
   if (!user) throw new AppError("Usuário não encontrado", 404);
 
   const newMicro = microRepo.create({
