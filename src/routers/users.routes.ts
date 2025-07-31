@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createUserController, getUserByIDController, getUsersController } from "../controllers/users.controller";
+import { createUserController, deleteUserController, getUserByIDController, getUsersController } from "../controllers/users.controller";
 import { userSchema } from "../schemas/user.schema";
 import ensureDataIsValidMiddleware from "../middlewares/ensureDataIsValid.middleware";
 import ensureUserIsAuthenticatedMiddleware from "../middlewares/ensureUserIsAuthenticated.middleware";
@@ -24,6 +24,12 @@ userRoutes.get(
     "/:id",
     ensureUserIsAuthenticatedMiddleware,
     getUserByIDController
+);
+
+userRoutes.delete(
+    "/:id",
+    ensureUserIsAuthenticatedMiddleware,
+    deleteUserController
 );
 
 export default userRoutes
