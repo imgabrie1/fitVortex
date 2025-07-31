@@ -29,7 +29,7 @@ export class MicroCycle {
   @OneToMany(() => MicroCycleVolume, v => v.microCycle, { cascade: true })
   volumes: MicroCycleVolume[];
 
-  @ManyToOne(() => User, u => u.microCycles, { nullable: false })
+  @ManyToOne(() => User, u => u.microCycles, { nullable: false, onDelete: "CASCADE" })
   @JoinColumn({ name: "userID" })
   user: User;
 
