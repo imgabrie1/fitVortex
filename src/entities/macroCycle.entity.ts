@@ -14,7 +14,7 @@ export class MacroCycle {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => User, user => user.macroCycles)
+  @ManyToOne(() => User, user => user.macroCycles, { onDelete: "CASCADE" })
   user: User;
 
   @Column({ type: "date" })
