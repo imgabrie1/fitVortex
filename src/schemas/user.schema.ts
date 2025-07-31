@@ -16,7 +16,7 @@ export const returnUserSchema = userSchema
 export const returnUserSchemaComplete = returnUserSchema.extend({
   createdAt: z.date().or(string()),
   updatedAt: z.date().or(string()),
-  deletedAt: z.date().or(string()).nullable(),
+  // deletedAt: z.date().or(string()).nullable(),
 });
 
 export const updateUser = userSchema.partial().omit({ admin: true });
