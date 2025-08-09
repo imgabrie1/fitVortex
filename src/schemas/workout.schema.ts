@@ -1,10 +1,27 @@
 import { z } from 'zod';
 
-export const workoutSchema = z.object({
-  name: z.string().min(3).max(50),
-  exerciseIDs: z.array(z.string().uuid()),
+const workoutExerciseSchema = z.object({
+  exerciseId: z.string().uuid("ID de exercício inválido"),
+  targetSets: z.number().int().min(1, "O número de séries alvo deve ser no mínimo 1"),
 });
 
-export const returnWorkoutSchema = workoutSchema.extend({
+export const workoutSchema = z.object({
+  name: z.string().min(3, "O nome deve ter no mínimo 3 caracteres").max(50, "O nome deve ter no máximo 50 caracteres"),
+  exercises: z.array(workoutExerciseSchema).min(1, "O treino deve ter no mínimo 1 exercício"),
+});
+
+export const returnWorkoutSchema = z.object({
   id: z.string().uuid(),
+  name: z.string(),
+  workoutExercises: z.array(z.object({
+    id: z.string().uuid(),
+    targetSets: z.number(),
+    exercise: z.object({
+      id: z.string().uuid(),
+      name: z.string(),
+      description: z.string().nullable(),
+      primaryMuscle: z.string(),
+      secondaryMuscle: z.string().nullable(),
+    })
+  }))
 });
