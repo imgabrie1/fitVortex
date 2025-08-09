@@ -1,7 +1,7 @@
-import { Column, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { MuscleGroup } from "../enum/muscleGroup.enum";
-import { Workout } from "./workout.entity";
 import { Set } from "./set.entity";
+import { WorkoutExercise } from "./workoutExercise.entity";
 
 @Entity()
 export class Exercise {
@@ -20,8 +20,8 @@ export class Exercise {
     @Column({ type: "enum", enum: MuscleGroup, nullable: true })
     secondaryMuscle: MuscleGroup | null
 
-    @ManyToMany(() => Workout, workout => workout.exercises)
-    workouts: Workout[];
+    @OneToMany(() => WorkoutExercise, workoutExercise => workoutExercise.exercise)
+    workoutExercises: WorkoutExercise[];
 
     @OneToMany(() => Set, (set) => set.exercise)
     sets: Set[];
