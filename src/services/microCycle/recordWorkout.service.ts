@@ -8,11 +8,14 @@ import { AppError } from "../../errors";
 import { TRecordWorkout } from "../../interfaces/set.interface";
 import { MuscleGroup } from "../../enum/muscleGroup.enum";
 import { Workout } from "../../entities/workout.entity";
+import { MicroCycle } from "../../entities/microCycle.entity";
+import { MicroCycleVolume } from "../../entities/microCycleVolume.entity";
 
 export const recordWorkoutService = async (
   microCycleID: string,
   workoutID: string,
-  payload: TRecordWorkout
+  payload: TRecordWorkout,
+  secondaryMuscleMultiplier: number = 0.5 // Fator de multiplicação para músculos secundários
 ): Promise<MicroCycleItem> => {
   const microCycleItemRepo = AppDataSource.getRepository(MicroCycleItem);
   const exerciseRepo = AppDataSource.getRepository(Exercise);
@@ -20,6 +23,7 @@ export const recordWorkoutService = async (
   const volumeRepo = AppDataSource.getRepository(WorkoutVolume);
   const volumeEntryRepo = AppDataSource.getRepository(WorkoutVolumeEntry);
   const workoutRepo = AppDataSource.getRepository(Workout);
+  const microCycleVolumeRepo = AppDataSource.getRepository(MicroCycleVolume);
 
   const microCycleItem = await microCycleItemRepo.findOne({
     where: {
@@ -62,18 +66,19 @@ export const recordWorkoutService = async (
       await setRepo.save(setsToCreate);
 
       if (exercise.primaryMuscle) {
-        setsByPrimaryMuscle[exercise.primaryMuscle] = 
+        setsByPrimaryMuscle[exercise.primaryMuscle] =
           (setsByPrimaryMuscle[exercise.primaryMuscle] || 0) + setsToCreate.length;
       }
 
       for (const set of setsToCreate) {
+        const setVolume = set.reps * set.weight;
         if (exercise.primaryMuscle) {
           volumeByMuscleGroup[exercise.primaryMuscle] =
-            (volumeByMuscleGroup[exercise.primaryMuscle] || 0) + set.reps;
+            (volumeByMuscleGroup[exercise.primaryMuscle] || 0) + setVolume;
         }
         if (exercise.secondaryMuscle) {
           volumeByMuscleGroup[exercise.secondaryMuscle] =
-            (volumeByMuscleGroup[exercise.secondaryMuscle] || 0) + set.reps * 0.5;
+            (volumeByMuscleGroup[exercise.secondaryMuscle] || 0) + setVolume * secondaryMuscleMultiplier;
         }
       }
     })
@@ -103,6 +108,39 @@ export const recordWorkoutService = async (
       });
     }
     await volumeEntryRepo.save(volumeEntry);
+  }
+
+  // Aggregating volume to MicroCycleVolume
+  const microCycleItemWithMicroCycle = await microCycleItemRepo.findOne({
+      where: { id: microCycleItem.id },
+      relations: ["microCycle"]
+  });
+
+  if (!microCycleItemWithMicroCycle) {
+      throw new AppError("Item do microciclo não encontrado após o registro do treino.", 500);
+  }
+
+  for (const muscleGroupStr in volumeByMuscleGroup) {
+    const muscleGroup = muscleGroupStr as MuscleGroup;
+    const calculatedVolume = volumeByMuscleGroup[muscleGroup]!;
+
+    let microCycleVolume = await microCycleVolumeRepo.findOne({
+        where: {
+            microCycle: { id: microCycleItemWithMicroCycle.microCycle.id },
+            muscleGroup: muscleGroup
+        }
+    });
+
+    if (microCycleVolume) {
+        microCycleVolume.totalVolume = Number(microCycleVolume.totalVolume) + calculatedVolume;
+    } else {
+        microCycleVolume = microCycleVolumeRepo.create({
+            microCycle: microCycleItemWithMicroCycle.microCycle,
+            muscleGroup: muscleGroup,
+            totalVolume: calculatedVolume
+        });
+    }
+    await microCycleVolumeRepo.save(microCycleVolume);
   }
 
   const finalMicroCycleItem = await microCycleItemRepo.findOne({
