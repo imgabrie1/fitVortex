@@ -13,6 +13,6 @@ export class MicroCycleVolume {
   @Column({ type: "enum", enum: MuscleGroup })
   muscleGroup: MuscleGroup;
 
-  @Column({ type: "int" })
+  @Column({ type: "float" })
   totalVolume: number; // weight * reps somado
 }
