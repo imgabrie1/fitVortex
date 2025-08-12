@@ -2,7 +2,7 @@ import { Router } from "express";
 import ensureDataIsValidMiddleware from "../middlewares/ensureDataIsValid.middleware";
 import { createMacroCycleSchema } from "../schemas/macroCycle.schema";
 import ensureUserIsAuthenticatedMiddleware from "../middlewares/ensureUserIsAuthenticated.middleware";
-import { addMicroCycleToMacroCycleController, createMacroCycleController, deleteMacroCycleController, getMacroCycleByIDController } from "../controllers/macroCycle.controller";
+import { addMicroCycleToMacroCycleController, createMacroCycleController, deleteMacroCycleController, getMacroCycleByIDController, adjustVolumeController } from "../controllers/macroCycle.controller";
 
 const macroCycleRoutes: Router = Router();
 
@@ -30,5 +30,11 @@ macroCycleRoutes.delete(
     ensureUserIsAuthenticatedMiddleware,
     deleteMacroCycleController
   );
+
+macroCycleRoutes.post(
+    "/:macroCycleId/adjust-volume",
+    ensureUserIsAuthenticatedMiddleware,
+    adjustVolumeController
+);
 
 export default macroCycleRoutes;
