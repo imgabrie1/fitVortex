@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { adjustVolumeService } from "../../services/macroCycle/adjustVolume.service";
+import { adjustVolumeService } from "../services/macroCycle/adjustVolume.service";
 
 export const adjustVolumeController = async (req: Request, res: Response): Promise<Response> => {
     const { macroCycleId } = req.params;
@@ -7,7 +7,6 @@ export const adjustVolumeController = async (req: Request, res: Response): Promi
 
     const { weights, rules } = req.body;
 
-    // Usando os valores default que você especificou, mas permitindo override
     const options = {
         weights: {
             firstVsLast: weights?.firstVsLast ?? 0.6,
