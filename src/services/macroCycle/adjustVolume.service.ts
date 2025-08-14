@@ -24,6 +24,8 @@ interface VolumeAnalysis {
   suggestion: "increase" | "decrease" | "maintain";
   adjustmentPercentage: number;
   reason: string;
+  totalSets: number;
+  newSuggestedTotalSets: number;
 }
 
 export const adjustVolumeService = async (
@@ -39,6 +41,10 @@ export const adjustVolumeService = async (
       "items",
       "items.microCycle",
       "items.microCycle.volumes",
+      "items.microCycle.cycleItems",
+      "items.microCycle.cycleItems.workout",
+      "items.microCycle.cycleItems.workout.workoutExercises",
+      "items.microCycle.cycleItems.workout.workoutExercises.exercise",
       "user",
     ],
   });
@@ -51,19 +57,46 @@ export const adjustVolumeService = async (
     throw new AppError("O macrociclo precisa de pelo menos 2 microciclos para análise.", 400);
   }
 
-  // Ordenar microciclos pela data de criação
   const sortedItems = macroCycle.items.sort(
     (a, b) => new Date(a.microCycle.createdAt).getTime() - new Date(b.microCycle.createdAt).getTime()
   );
 
-  const volumesByMuscleGroup: { [key in MuscleGroup]?: number[] } = {};
-
+  const volumesByMuscleGroup: { [key: string]: number[] } = {};
   for (const item of sortedItems) {
     for (const volume of item.microCycle.volumes) {
-      if (!volumesByMuscleGroup[volume.muscleGroup]) {
-        volumesByMuscleGroup[volume.muscleGroup] = [];
+      const muscleGroupKey = volume.muscleGroup as string;
+      if (!volumesByMuscleGroup[muscleGroupKey]) {
+        volumesByMuscleGroup[muscleGroupKey] = [];
       }
-      volumesByMuscleGroup[volume.muscleGroup]!.push(volume.totalVolume);
+      volumesByMuscleGroup[muscleGroupKey]!.push(volume.totalVolume);
+    }
+  }
+
+  const referenceMicroCycle = sortedItems[0].microCycle;
+  const totalSetsByMuscleGroup: { [key: string]: number } = {};
+
+  if (referenceMicroCycle.cycleItems) {
+    for (const cycleItem of referenceMicroCycle.cycleItems) {
+      const workout = cycleItem.workout;
+      if (workout && workout.workoutExercises) {
+        for (const workoutExercise of workout.workoutExercises) {
+          const primaryMuscleKey = workoutExercise.exercise.primaryMuscle as string;
+          const secondaryMuscleKey = workoutExercise.exercise.secondaryMuscle as string | null;
+          const sets = workoutExercise.targetSets;
+
+          if (!totalSetsByMuscleGroup[primaryMuscleKey]) {
+            totalSetsByMuscleGroup[primaryMuscleKey] = 0;
+          }
+          totalSetsByMuscleGroup[primaryMuscleKey] += sets;
+
+          if (secondaryMuscleKey) {
+            if (!totalSetsByMuscleGroup[secondaryMuscleKey]) {
+              totalSetsByMuscleGroup[secondaryMuscleKey] = 0;
+            }
+            totalSetsByMuscleGroup[secondaryMuscleKey] += sets * 0.5;
+          }
+        }
+      }
     }
   }
 
@@ -77,7 +110,6 @@ export const adjustVolumeService = async (
       continue;
     }
 
-    // 1. Cálculo "Primeiro vs. Último"
     const firstVolume = volumes[0];
     const lastVolume = volumes[volumes.length - 1];
     let firstVsLastChange: number | null = null;
@@ -85,7 +117,6 @@ export const adjustVolumeService = async (
       firstVsLastChange = ((lastVolume - firstVolume) / firstVolume) * 100;
     }
 
-    // 2. Cálculo "Média Semana-a-Semana"
     const weeklyChanges: number[] = [];
     for (let i = 0; i < volumes.length - 1; i++) {
       const current = volumes[i];
@@ -99,7 +130,6 @@ export const adjustVolumeService = async (
       ? weeklyChanges.reduce((a, b) => a + b, 0) / weeklyChanges.length
       : null;
 
-    // 3. Combinação
     let combinedChange = 0;
     if (firstVsLastChange !== null && weeklyAverageChange !== null) {
         combinedChange =
@@ -111,8 +141,6 @@ export const adjustVolumeService = async (
         combinedChange = weeklyAverageChange;
     }
 
-
-    // 4. Decisão
     let suggestion: "increase" | "decrease" | "maintain" = "maintain";
     let adjustmentPercentage = 0;
     let reason = "";
@@ -131,6 +159,10 @@ export const adjustVolumeService = async (
       reason = `A variação combinada de ${combinedChange.toFixed(2)}% está dentro dos limites para manutenção.`;
     }
 
+    const totalSets = totalSetsByMuscleGroup[muscleGroup] || 0;
+    const newTotalSets = totalSets * (1 + adjustmentPercentage / 100);
+    const newSuggestedTotalSets = Math.round(newTotalSets * 2) / 2;
+
     analysisResults.push({
       muscleGroup,
       volumes,
@@ -140,6 +172,8 @@ export const adjustVolumeService = async (
       suggestion,
       adjustmentPercentage,
       reason,
+      totalSets,
+      newSuggestedTotalSets,
     });
   }
 
