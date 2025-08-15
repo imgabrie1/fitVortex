@@ -15,7 +15,7 @@ export const recordWorkoutService = async (
   microCycleID: string,
   workoutID: string,
   payload: TRecordWorkout,
-  secondaryMuscleMultiplier: number = 0.5 // Fator de multiplicação para músculos secundários
+  secondaryMuscleMultiplier: number = 0.5
 ): Promise<MicroCycleItem> => {
   const microCycleItemRepo = AppDataSource.getRepository(MicroCycleItem);
   const exerciseRepo = AppDataSource.getRepository(Exercise);
@@ -110,7 +110,6 @@ export const recordWorkoutService = async (
     await volumeEntryRepo.save(volumeEntry);
   }
 
-  // Aggregating volume to MicroCycleVolume
   const microCycleItemWithMicroCycle = await microCycleItemRepo.findOne({
       where: { id: microCycleItem.id },
       relations: ["microCycle"]

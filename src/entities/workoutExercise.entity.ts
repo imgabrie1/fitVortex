@@ -10,11 +10,6 @@ export class WorkoutExercise {
     @Column({ type: "integer" })
     targetSets: number;
 
-    // @Column({ type: "varchar", length: 20, nullable: true })
-    // targetReps: string | null; // Ex: "8-12"
-
-    // @Column({ type: "integer", nullable: true })
-    // restTimeInSeconds: number | null;
 
     @ManyToOne(() => Workout, workout => workout.workoutExercises, { onDelete: 'CASCADE' })
     workout: Workout;
