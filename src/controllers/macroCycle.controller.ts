@@ -54,7 +54,6 @@ export const adjustVolumeController = async (req: Request, res: Response): Promi
 
     const { weights, rules } = req.body;
 
-    // Usando os valores default que você especificou, mas permitindo override
     const options = {
         weights: {
             firstVsLast: weights?.firstVsLast ?? 0.6,
