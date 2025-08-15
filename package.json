@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/imgabrie1/fitVortex#readme",
   "dependencies": {
+    "@google/genai": "^1.14.0",
     "axios": "^1.10.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
