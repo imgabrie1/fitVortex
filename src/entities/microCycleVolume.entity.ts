@@ -14,5 +14,5 @@ export class MicroCycleVolume {
   muscleGroup: MuscleGroup;
 
   @Column({ type: "float" })
-  totalVolume: number; // weight * reps somado
+  totalVolume: number;
 }

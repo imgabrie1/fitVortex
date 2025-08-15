@@ -3,6 +3,7 @@ import ensureDataIsValidMiddleware from "../middlewares/ensureDataIsValid.middle
 import { createMacroCycleSchema } from "../schemas/macroCycle.schema";
 import ensureUserIsAuthenticatedMiddleware from "../middlewares/ensureUserIsAuthenticated.middleware";
 import { addMicroCycleToMacroCycleController, createMacroCycleController, deleteMacroCycleController, getMacroCycleByIDController, adjustVolumeController } from "../controllers/macroCycle.controller";
+import { generateNextMacroCycleController } from "../controllers/generateNextMacroCycle.controller";
 
 const macroCycleRoutes: Router = Router();
 
@@ -11,6 +12,12 @@ macroCycleRoutes.post(
   ensureUserIsAuthenticatedMiddleware,
   ensureDataIsValidMiddleware(createMacroCycleSchema),
   createMacroCycleController
+);
+
+macroCycleRoutes.post(
+  "/:id/generate-next",
+  ensureUserIsAuthenticatedMiddleware,
+  generateNextMacroCycleController
 );
 
 macroCycleRoutes.get(

@@ -36,8 +36,6 @@ export class User {
   @UpdateDateColumn({ type: "date" })
   updatedAt: Date | string;
 
-  // @DeleteDateColumn({ type: "date" })
-  // deletedAt: Date | string;
 
   @OneToMany(() => MicroCycle, (microCycle) => microCycle.user)
   microCycles: MicroCycle[];
