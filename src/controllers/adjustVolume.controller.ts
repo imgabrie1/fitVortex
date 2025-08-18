@@ -7,22 +7,28 @@ export const adjustVolumeController = async (req: Request, res: Response): Promi
 
     const { weights, rules } = req.body;
 
+    const defaultIncreaseRules = [
+        { threshold: 20, percentage: 20 },
+        { threshold: 15, percentage: 15 },
+        { threshold: 10, percentage: 10 },
+    ];
+
+    const defaultDecreaseRules = [
+        { threshold: -20, percentage: -20 },
+        { threshold: -15, percentage: -15 },
+        { threshold: -10, percentage: -10 },
+    ];
+
     const options = {
         weights: {
             firstVsLast: weights?.firstVsLast ?? 0.6,
             weeklyAverage: weights?.weeklyAverage ?? 0.4,
         },
         rules: {
-            increase: {
-                threshold: rules?.increase?.threshold ?? 10,
-                percentage: rules?.increase?.percentage ?? 10,
-            },
-            decrease: {
-                threshold: rules?.decrease?.threshold ?? 0,
-                percentage: rules?.decrease?.percentage ?? -10,
-            },
+            increase: rules?.increase ?? defaultIncreaseRules,
+            decrease: rules?.decrease ?? defaultDecreaseRules,
             maintain: {
-                threshold: rules?.maintain?.threshold ?? 0,
+                threshold: rules?.maintain?.threshold ?? 9,
             },
         },
     };
