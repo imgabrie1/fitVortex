@@ -9,8 +9,8 @@ interface AdjustmentOptions {
     weeklyAverage: number;
   };
   rules: {
-    increase: { threshold: number; percentage: number };
-    decrease: { threshold: number; percentage: number };
+    increase: { threshold: number; percentage: number }[];
+    decrease: { threshold: number; percentage: number }[];
     maintain: { threshold: number };
   };
 }
@@ -141,22 +141,40 @@ export const adjustVolumeService = async (
         combinedChange = weeklyAverageChange;
     }
 
+    const sortedIncreaseRules = options.rules.increase.sort((a, b) => b.threshold - a.threshold);
+    const sortedDecreaseRules = options.rules.decrease.sort((a, b) => a.threshold - b.threshold);
+
     let suggestion: "increase" | "decrease" | "maintain" = "maintain";
     let adjustmentPercentage = 0;
     let reason = "";
 
-    if (combinedChange > options.rules.increase.threshold) {
-      suggestion = "increase";
-      adjustmentPercentage = options.rules.increase.percentage;
-      reason = `O aumento combinado de ${combinedChange.toFixed(2)}% excedeu o limite de ${options.rules.increase.threshold}%.`;
-    } else if (combinedChange < options.rules.decrease.threshold) {
-      suggestion = "decrease";
-      adjustmentPercentage = options.rules.decrease.percentage;
-      reason = `A queda combinada de ${combinedChange.toFixed(2)}% foi abaixo do limite de ${options.rules.decrease.threshold}%.`;
+    let appliedRule = false;
+    if (combinedChange > options.rules.maintain.threshold) {
+      for (const rule of sortedIncreaseRules) {
+        if (combinedChange >= rule.threshold) {
+          suggestion = "increase";
+          adjustmentPercentage = rule.percentage;
+          reason = `O aumento combinado de ${combinedChange.toFixed(2)}% excedeu o limite de ${rule.threshold}%.`;
+          appliedRule = true;
+          break;
+        }
+      }
     } else {
-      suggestion = "maintain";
-      adjustmentPercentage = 0;
-      reason = `A variação combinada de ${combinedChange.toFixed(2)}% está dentro dos limites para manutenção.`;
+      for (const rule of sortedDecreaseRules) {
+        if (combinedChange < rule.threshold) {
+          suggestion = "decrease";
+          adjustmentPercentage = rule.percentage;
+          reason = `A queda combinada de ${combinedChange.toFixed(2)}% foi abaixo do limite de ${rule.threshold}%.`;
+          appliedRule = true;
+          break;
+        }
+      }
+    }
+
+    if (!appliedRule) {
+        suggestion = "maintain";
+        adjustmentPercentage = 0;
+        reason = `A variação combinada de ${combinedChange.toFixed(2)}% está dentro dos limites para manutenção.`;
     }
 
     const totalSets = totalSetsByMuscleGroup[muscleGroup] || 0;
