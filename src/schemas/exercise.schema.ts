@@ -5,7 +5,7 @@ export const exerciseSchema = z.object({
   name: z.string().min(3).max(50),
   description: z.string().nullable().optional(),
   primaryMuscle: z.nativeEnum(MuscleGroup),
-  secondaryMuscle: z.nativeEnum(MuscleGroup).nullable().optional(),
+  secondaryMuscle: z.array(z.nativeEnum(MuscleGroup)).nullable().default(null),
 });
 
 export const returnExerciseSchema = exerciseSchema.extend({

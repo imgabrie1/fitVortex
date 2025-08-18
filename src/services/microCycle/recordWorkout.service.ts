@@ -77,8 +77,10 @@ export const recordWorkoutService = async (
             (volumeByMuscleGroup[exercise.primaryMuscle] || 0) + setVolume;
         }
         if (exercise.secondaryMuscle) {
-          volumeByMuscleGroup[exercise.secondaryMuscle] =
-            (volumeByMuscleGroup[exercise.secondaryMuscle] || 0) + setVolume * secondaryMuscleMultiplier;
+          for (const muscle of exercise.secondaryMuscle) {
+            volumeByMuscleGroup[muscle] =
+              (volumeByMuscleGroup[muscle] || 0) + setVolume * secondaryMuscleMultiplier;
+          }
         }
       }
     })
