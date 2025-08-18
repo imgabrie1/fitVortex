@@ -17,8 +17,8 @@ export class Exercise {
     @Column({ type: "enum", enum: MuscleGroup })
     primaryMuscle: MuscleGroup
 
-    @Column({ type: "enum", enum: MuscleGroup, nullable: true })
-    secondaryMuscle: MuscleGroup | null
+    @Column({ type: "jsonb", nullable: true, default: [] })
+    secondaryMuscle: MuscleGroup[] | null
 
     @OneToMany(() => WorkoutExercise, workoutExercise => workoutExercise.exercise)
     workoutExercises: WorkoutExercise[];
