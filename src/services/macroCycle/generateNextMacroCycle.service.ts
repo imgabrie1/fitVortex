@@ -25,6 +25,7 @@ import { MacroCycleItem } from "../../entities/macroCycleItem.entity";
 import { MicroCycleItem } from "../../entities/microCycleItem.entity";
 
 import { GoogleGenAI } from "@google/genai";
+import { MuscleGroup } from "../../enum/muscleGroup.enum";
 
 interface IGenerateNextMacroCycle {
   macroCycleId: string;
@@ -101,9 +102,17 @@ export const generateNextMacroCycleService = async ({
   const volumeAnalysis = await adjustVolumeService(macroCycleId, userId, {
     weights: { firstVsLast: 0.6, weeklyAverage: 0.4 },
     rules: {
-      increase: { threshold: 10, percentage: 10 },
-      decrease: { threshold: 0, percentage: -10 },
-      maintain: { threshold: 0 },
+        increase: [
+            { threshold: 20, percentage: 20 },
+            { threshold: 15, percentage: 15 },
+            { threshold: 10, percentage: 10 },
+        ],
+        decrease: [
+            { threshold: -20, percentage: -20 },
+            { threshold: -15, percentage: -15 },
+            { threshold: -10, percentage: -10 },
+        ],
+        maintain: { threshold: 9 },
     },
   });
 
@@ -140,7 +149,7 @@ Available exercises in the database (use exactly these names when referencing ex
 ${dbExerciseNames.join(", ")}
 
 Instructions:
-1) Your response MUST be a JSON object following this exact structure: { "workouts": [ { "name": "Workout A", "exercises": [ { "exerciseName": "Bench Press", "targetSets": 4 } ] } ] }
+1) Your response MUST be a JSON object following this exact structure: { \"workouts\": [ { \"name\": \"Workout A\", \"exercises\": [ { \"exerciseName\": \"Bench Press\", \"targetSets\": 4 } ] } ] }
 2) The sum of the sets for each muscle group in your generated plan should match the suggested total weekly sets as closely as possible.
 3) If createNewWorkout is false, use the same exercises as the old plan, only adjusting the sets.
 4) If createNewWorkout is true, you may suggest new exercises, but they MUST be in the available exercises list above.
@@ -195,6 +204,37 @@ Return ONLY the JSON object (no explanation, no markdown fences).
     console.error("AI returned invalid workout plan shape:", newWorkoutPlan);
     throw new AppError("AI returned invalid workout plan", 502);
   }
+
+  const aiGeneratedSets: { [key: string]: number } = {};
+  for (const muscle of Object.values(MuscleGroup)) {
+      aiGeneratedSets[muscle] = 0;
+  }
+
+  for (const workout of newWorkoutPlan.workouts) {
+      for (const exercise of workout.exercises) {
+          const dbExercise = dbExercises.find(e => e.name === exercise.exerciseName);
+          if (dbExercise) {
+              aiGeneratedSets[dbExercise.primaryMuscle] += exercise.targetSets;
+              if (dbExercise.secondaryMuscle) {
+                  for (const secondaryMuscle of dbExercise.secondaryMuscle) {
+                      aiGeneratedSets[secondaryMuscle] += exercise.targetSets * 0.5;
+                  }
+              }
+          }
+      }
+  }
+
+  console.log("\n--- AI vs. Suggested Sets ---");
+  volumeAnalysis.forEach(v => {
+      const aiSets = aiGeneratedSets[v.muscleGroup] || 0;
+      const suggestedSets = v.newSuggestedTotalSets;
+      const diff = aiSets - suggestedSets;
+      console.log(`${v.muscleGroup}: Suggested: ${suggestedSets}, AI: ${aiSets.toFixed(1)}, Diff: ${diff.toFixed(1)}`);
+      if (Math.abs(diff) > 2) { 
+          console.warn(`Large discrepancy for ${v.muscleGroup}. Check AI logic.`);
+      }
+  });
+  console.log("---------------------------\n");
 
   const queryRunner = AppDataSource.createQueryRunner();
   await queryRunner.connect();
