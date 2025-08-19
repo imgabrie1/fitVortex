@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
 import { iExercise } from "../interfaces/exercise.interface";
 import createExerciseService from "../services/exercise/createExercise.service";
-import { getExerciseService } from "../services/exercise/getExerciseById.service";
+import { getExerciseByIDService } from "../services/exercise/getExerciseById.service";
 import patchExerciseService from "../services/exercise/patchExercise.service";
 import deleteExerciseService from "../services/exercise/deleteExercise.service";
 import { AppError } from "../errors";
+import { getExercisesService } from "../services/exercise/getExercises.service";
 
 export const createExerciseController = async (
   req: Request,
@@ -18,10 +19,18 @@ export const createExerciseController = async (
   return res.status(201).json(newExercise);
 };
 
-export const getExerciseController = async (req: Request, res: Response): Promise<Response> => {
+export const getExerciseByIDController = async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params
 
-  const exercise = await getExerciseService(id)
+  const exercise = await getExerciseByIDService(id)
+
+  return res.status(200).json(exercise)
+}
+
+export const getExercisesController = async (req: Request, res: Response): Promise<Response> => {
+  const { id } = req.params
+
+  const exercise = await getExercisesService()
 
   return res.status(200).json(exercise)
 }
