@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createExerciseController, deleteExerciseController, getExerciseController, patchExerciseController } from "../controllers/exercise.controller";
+import { createExerciseController, deleteExerciseController, getExerciseByIDController, getExercisesController, patchExerciseController } from "../controllers/exercise.controller";
 import ensureDataIsValidMiddleware from "../middlewares/ensureDataIsValid.middleware";
 import { exerciseSchema } from "../schemas/exercise.schema";
 import ensureUserIsAuthenticatedMiddleware from "../middlewares/ensureUserIsAuthenticated.middleware";
@@ -18,7 +18,13 @@ exerciseRoutes.post(
 exerciseRoutes.get(
   "/:id",
   ensureUserIsAuthenticatedMiddleware,
-  getExerciseController
+  getExerciseByIDController
+)
+
+exerciseRoutes.get(
+  "",
+  ensureUserIsAuthenticatedMiddleware,
+  getExercisesController
 )
 
 exerciseRoutes.patch(
