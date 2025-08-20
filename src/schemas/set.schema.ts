@@ -1,9 +1,11 @@
 import { z } from 'zod';
+import { Side } from '../enum/side.enum';
 
 export const setSchema = z.object({
   reps: z.number().int().positive(),
   weight: z.number().positive(),
   notes: z.string().max(255).optional(),
+  side: z.nativeEnum(Side).optional()
 });
 
 export const recordWorkoutSchema = z.object({

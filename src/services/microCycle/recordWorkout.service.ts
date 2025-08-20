@@ -10,6 +10,7 @@ import { MuscleGroup } from "../../enum/muscleGroup.enum";
 import { Workout } from "../../entities/workout.entity";
 import { MicroCycle } from "../../entities/microCycle.entity";
 import { MicroCycleVolume } from "../../entities/microCycleVolume.entity";
+import { Side } from "../../enum/side.enum";
 
 export const recordWorkoutService = async (
   microCycleID: string,
@@ -58,6 +59,7 @@ export const recordWorkoutService = async (
           reps: setData.reps,
           weight: setData.weight,
           notes: setData.notes || null,
+          side: setData.side || Side.BOTH,
           microCycleItem,
           exercise,
         });
@@ -72,6 +74,7 @@ export const recordWorkoutService = async (
 
       for (const set of setsToCreate) {
         const setVolume = set.reps * set.weight;
+
         if (exercise.primaryMuscle) {
           volumeByMuscleGroup[exercise.primaryMuscle] =
             (volumeByMuscleGroup[exercise.primaryMuscle] || 0) + setVolume;
