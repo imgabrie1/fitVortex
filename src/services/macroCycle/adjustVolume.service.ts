@@ -13,6 +13,7 @@ interface AdjustmentOptions {
     decrease: { threshold: number; percentage: number }[];
     maintain: { threshold: number };
   };
+  maxSetsPerMicroCycle?: number;
 }
 
 interface VolumeAnalysis {
@@ -50,15 +51,23 @@ export const adjustVolumeService = async (
   });
 
   if (!macroCycle) {
-    throw new AppError("Macrociclo não encontrado ou não pertence ao usuário.", 404);
+    throw new AppError(
+      "Macrociclo não encontrado ou não pertence ao usuário.",
+      404
+    );
   }
 
   if (macroCycle.items.length < 2) {
-    throw new AppError("O macrociclo precisa de pelo menos 2 microciclos para análise.", 400);
+    throw new AppError(
+      "O macrociclo precisa de pelo menos 2 microciclos para análise.",
+      400
+    );
   }
 
   const sortedItems = macroCycle.items.sort(
-    (a, b) => new Date(a.microCycle.createdAt).getTime() - new Date(b.microCycle.createdAt).getTime()
+    (a, b) =>
+      new Date(a.microCycle.createdAt).getTime() -
+      new Date(b.microCycle.createdAt).getTime()
   );
 
   const volumesByMuscleGroup: { [key: string]: number[] } = {};
@@ -80,8 +89,10 @@ export const adjustVolumeService = async (
       const workout = cycleItem.workout;
       if (workout && workout.workoutExercises) {
         for (const workoutExercise of workout.workoutExercises) {
-          const primaryMuscleKey = workoutExercise.exercise.primaryMuscle as string;
-          const secondaryMuscleKey = workoutExercise.exercise.secondaryMuscle as string | null;
+          const primaryMuscleKey = workoutExercise.exercise
+            .primaryMuscle as string;
+          const secondaryMuscleKey = workoutExercise.exercise
+            .secondaryMuscle as string | null;
           const sets = workoutExercise.targetSets;
 
           if (!totalSetsByMuscleGroup[primaryMuscleKey]) {
@@ -126,23 +137,28 @@ export const adjustVolumeService = async (
         weeklyChanges.push(change);
       }
     }
-    const weeklyAverageChange = weeklyChanges.length > 0
-      ? weeklyChanges.reduce((a, b) => a + b, 0) / weeklyChanges.length
-      : null;
+    const weeklyAverageChange =
+      weeklyChanges.length > 0
+        ? weeklyChanges.reduce((a, b) => a + b, 0) / weeklyChanges.length
+        : null;
 
     let combinedChange = 0;
     if (firstVsLastChange !== null && weeklyAverageChange !== null) {
-        combinedChange =
-            firstVsLastChange * options.weights.firstVsLast +
-            weeklyAverageChange * options.weights.weeklyAverage;
+      combinedChange =
+        firstVsLastChange * options.weights.firstVsLast +
+        weeklyAverageChange * options.weights.weeklyAverage;
     } else if (firstVsLastChange !== null) {
-        combinedChange = firstVsLastChange;
+      combinedChange = firstVsLastChange;
     } else if (weeklyAverageChange !== null) {
-        combinedChange = weeklyAverageChange;
+      combinedChange = weeklyAverageChange;
     }
 
-    const sortedIncreaseRules = options.rules.increase.sort((a, b) => b.threshold - a.threshold);
-    const sortedDecreaseRules = options.rules.decrease.sort((a, b) => a.threshold - b.threshold);
+    const sortedIncreaseRules = options.rules.increase.sort(
+      (a, b) => b.threshold - a.threshold
+    );
+    const sortedDecreaseRules = options.rules.decrease.sort(
+      (a, b) => a.threshold - b.threshold
+    );
 
     let suggestion: "increase" | "decrease" | "maintain" = "maintain";
     let adjustmentPercentage = 0;
@@ -154,7 +170,9 @@ export const adjustVolumeService = async (
         if (combinedChange >= rule.threshold) {
           suggestion = "increase";
           adjustmentPercentage = rule.percentage;
-          reason = `O aumento combinado de ${combinedChange.toFixed(2)}% excedeu o limite de ${rule.threshold}%.`;
+          reason = `O aumento combinado de ${combinedChange.toFixed(
+            2
+          )}% excedeu o limite de ${rule.threshold}%.`;
           appliedRule = true;
           break;
         }
@@ -164,7 +182,9 @@ export const adjustVolumeService = async (
         if (combinedChange < rule.threshold) {
           suggestion = "decrease";
           adjustmentPercentage = rule.percentage;
-          reason = `A queda combinada de ${combinedChange.toFixed(2)}% foi abaixo do limite de ${rule.threshold}%.`;
+          reason = `A queda combinada de ${combinedChange.toFixed(
+            2
+          )}% foi abaixo do limite de ${rule.threshold}%.`;
           appliedRule = true;
           break;
         }
@@ -172,14 +192,23 @@ export const adjustVolumeService = async (
     }
 
     if (!appliedRule) {
-        suggestion = "maintain";
-        adjustmentPercentage = 0;
-        reason = `A variação combinada de ${combinedChange.toFixed(2)}% está dentro dos limites para manutenção.`;
+      suggestion = "maintain";
+      adjustmentPercentage = 0;
+      reason = `A variação combinada de ${combinedChange.toFixed(
+        2
+      )}% está dentro dos limites para manutenção.`;
     }
 
     const totalSets = totalSetsByMuscleGroup[muscleGroup] || 0;
     const newTotalSets = totalSets * (1 + adjustmentPercentage / 100);
-    const newSuggestedTotalSets = Math.round(newTotalSets * 2) / 2;
+    let newSuggestedTotalSets = Math.round(newTotalSets * 2) / 2;
+
+    const maxSets = options.maxSetsPerMicroCycle ?? 24;
+
+    if (newSuggestedTotalSets > maxSets) {
+      newSuggestedTotalSets = maxSets;
+      reason += ` O valor foi limitado ao máximo de ${maxSets} sets por microciclo.`;
+    }
 
     analysisResults.push({
       muscleGroup,
