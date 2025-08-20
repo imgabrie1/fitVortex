@@ -41,5 +41,8 @@ export class Exercise {
 
     @OneToMany(() => Set, (set) => set.exercise)
     sets: Set[];
+
+    @Column({ default: false })
+    default_unilateral: boolean;
 }
 
