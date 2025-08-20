@@ -11,6 +11,9 @@ export class Exercise {
     @Column({ type: "varchar", length: 50 })
     name: string
 
+    @Column({type: "varchar", nullable: true, default: null})
+    imageURL: string
+
     @Column({ type: "varchar", nullable: true })
     description: string | null
 
