@@ -3,7 +3,7 @@ import { MuscleGroup } from "../enum/muscleGroup.enum";
 import { Set } from "./set.entity";
 import { WorkoutExercise } from "./workoutExercise.entity";
 
-enum ResistanceType {
+export enum ResistanceType {
   BODYWEIGHT = "Peso corporal",
   FREE_WEIGHT = "Peso livre", // halter, anilha, barra
   MACHINE_PLATE = "Máquina com anilhas",
@@ -27,7 +27,7 @@ export class Exercise {
     @Column({ type: "varchar", nullable: true })
     description: string | null
 
-    @Column({ type: "enum", enum: MuscleGroup, default: ResistanceType.FREE_WEIGHT })
+    @Column({ type: "enum", enum: MuscleGroup, nullable: false })
     resistanceType: ResistanceType
 
     @Column({ type: "enum", enum: MuscleGroup })
