@@ -11,7 +11,9 @@ const createExerciseService = async (
   const dataForCreate = {
     name: exerciseData.name,
     primaryMuscle: exerciseData.primaryMuscle,
+    resistanceType: exerciseData.resistanceType,
     description: exerciseData.description ?? null,
+    imageURL: exerciseData.imageURL ?? null,
     secondaryMuscle: exerciseData.secondaryMuscle ?? null,
   };
 
