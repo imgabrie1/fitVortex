@@ -10,7 +10,7 @@ const ensureUserIsAuthenticatedMiddleware = (req: Request, res: Response, next: 
     let token = req.headers.authorization
 
     if(!token){
-        throw new AppError("Missing bearer token", 401)
+        throw new AppError("Token não encontrado", 401)
     }
 
     token = token.split(" ")[1]
