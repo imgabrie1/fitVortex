@@ -4,11 +4,11 @@ import { Set } from "./set.entity";
 import { WorkoutExercise } from "./workoutExercise.entity";
 
 enum ResistanceType {
-  BODYWEIGHT = "bodyweight", // peso corporal
-  FREE_WEIGHT = "free_weight", // halter, anilha, barra
-  MACHINE_PLATE = "machine_plate", // máquinas com anilha
-  MACHINE_STACK = "machine_stack", // polias
-  BAND = "band", // elástico
+  BODYWEIGHT = "Peso corporal",
+  FREE_WEIGHT = "Peso livre", // halter, anilha, barra
+  MACHINE_PLATE = "Máquina com anilhas",
+  MACHINE_STACK = "Máquina com polias",
+  BAND = "elástico",
   OTHER = "other"
 }
 
