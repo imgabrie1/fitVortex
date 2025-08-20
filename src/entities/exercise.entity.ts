@@ -27,7 +27,7 @@ export class Exercise {
     @Column({ type: "varchar", nullable: true })
     description: string | null
 
-    @Column({ type: "enum", enum: MuscleGroup })
+    @Column({ type: "enum", enum: MuscleGroup, default: ResistanceType.FREE_WEIGHT })
     resistanceType: ResistanceType
 
     @Column({ type: "enum", enum: MuscleGroup })
