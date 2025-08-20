@@ -46,7 +46,7 @@ interface IWorkoutPlan {
 
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
-  throw new AppError("GEMINI_API_KEY environment variable is not set");
+  throw new AppError("A variável de ambiente GEMINI_API_KEY não está definida");
 }
 const genai = new GoogleGenAI({ apiKey });
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
@@ -79,7 +79,7 @@ export const generateNextMacroCycleService = async ({
   const exerciseRepo = AppDataSource.getRepository(Exercise);
 
   const user = await userRepo.findOneBy({ id: userId });
-  if (!user) throw new AppError("User not found", 404);
+  if (!user) throw new AppError("Usuário não encontrado", 404);
 
   const referenceMacroCycle = await macroCycleRepo.findOne({
     where: { id: macroCycleId, user: { id: userId } },
@@ -97,7 +97,9 @@ export const generateNextMacroCycleService = async ({
   });
 
   if (!referenceMacroCycle)
-    throw new AppError("Reference macrocycle not found", 404);
+    throw new AppError("Macrociclo de referência não encontrado", 404);
+
+  const microcyclesCount = referenceMacroCycle.items.length > 0 ? referenceMacroCycle.items.length : 1;
 
   const volumeAnalysis = await adjustVolumeService(macroCycleId, userId, {
     weights: { firstVsLast: 0.6, weeklyAverage: 0.4 },
@@ -114,7 +116,7 @@ export const generateNextMacroCycleService = async ({
         ],
         maintain: { threshold: 9 },
     },
-  });
+  }, microcyclesCount);
 
   const referenceMicroCycle = referenceMacroCycle.items[0].microCycle;
   const oldWorkoutPlan = referenceMicroCycle.cycleItems.map((ci) => ({
@@ -172,37 +174,37 @@ Return ONLY the JSON object (no explanation, no markdown fences).
       },
     });
 
-    aiRawText =
+    aiRawText = 
       resp?.candidates?.[0]?.content?.[0]?.parts?.[0]?.text ??
       resp?.text ??
       null;
   } catch (err: any) {
     console.error("Gemini SDK error:", err?.response ?? err?.message ?? err);
-    throw new AppError("AI service request failed", 502);
+    throw new AppError("Falha na requisição ao serviço de IA", 502);
   }
 
   if (!aiRawText) {
-    throw new AppError("AI returned no usable text", 502);
+    throw new AppError("A IA não retornou texto utilizável", 502);
   }
 
   let newWorkoutPlan: IWorkoutPlan;
   try {
-    const cleaned =
+    const cleaned = 
       typeof aiRawText === "string"
         ? aiRawText.replace(/```json|```/g, "").trim()
         : aiRawText;
-    newWorkoutPlan =
+    newWorkoutPlan = 
       typeof cleaned === "string"
         ? JSON.parse(cleaned)
         : (cleaned as IWorkoutPlan);
   } catch (parseErr) {
     console.error("Failed to parse AI JSON:", parseErr, "raw:", aiRawText);
-    throw new AppError("Failed to parse AI response JSON", 502);
+    throw new AppError("Falha ao analisar o JSON da resposta da IA", 502);
   }
 
   if (!validateWorkoutPlan(newWorkoutPlan)) {
     console.error("AI returned invalid workout plan shape:", newWorkoutPlan);
-    throw new AppError("AI returned invalid workout plan", 502);
+    throw new AppError("A IA retornou um plano de treinos inválido", 502);
   }
 
   const aiGeneratedSets: { [key: string]: number } = {};
@@ -245,7 +247,7 @@ Return ONLY the JSON object (no explanation, no markdown fences).
     newMacroCycle.user = user;
 
     const refMicroQuantity = (referenceMacroCycle as any).microQuantity;
-    const microcyclesCount =
+    const microcyclesCount = 
       Array.isArray(referenceMacroCycle.items) &&
       referenceMacroCycle.items.length > 0
         ? referenceMacroCycle.items.length
@@ -256,7 +258,7 @@ Return ONLY the JSON object (no explanation, no markdown fences).
     newMacroCycle.microQuantity = microcyclesCount;
 
     newMacroCycle.startDate = new Date().toISOString().split("T")[0];
-    const duration =
+    const duration = 
       new Date(referenceMacroCycle.endDate).getTime() -
       new Date(referenceMacroCycle.startDate).getTime();
     newMacroCycle.endDate = new Date(new Date().getTime() + duration)
@@ -280,7 +282,7 @@ Return ONLY the JSON object (no explanation, no markdown fences).
           (e) => e.name === exerciseData.exerciseName
         );
         if (!exercise) {
-          throw new AppError(`Exercise "${exerciseData.exerciseName}" not found in database.`);
+          throw new AppError(`Exercício "${exerciseData.exerciseName}" não encontrado no banco de dados.`);
         }
 
         const newWorkoutExercise = new WorkoutExercise();
@@ -325,7 +327,7 @@ Return ONLY the JSON object (no explanation, no markdown fences).
         where: { id: newMicroCycle.id },
       });
       if (!baseMicro) {
-        throw new AppError("Created microcycle not found", 500);
+        throw new AppError("Micro ciclo criado não encontrado", 500);
       }
 
       const fetchedItems = await queryRunner.manager.find(MicroCycleItem, {
@@ -360,7 +362,7 @@ Return ONLY the JSON object (no explanation, no markdown fences).
     });
 
     if (!savedMicroCycle || !savedMacroCycle) {
-      throw new AppError("Failed to load created macro/micro cycle", 500);
+      throw new AppError("Falha ao carregar o ciclo macro/micro criado", 500);
     }
 
     return { macroCycle: savedMacroCycle, microCycle: savedMicroCycle };
@@ -371,7 +373,7 @@ Return ONLY the JSON object (no explanation, no markdown fences).
       console.error("Rollback failed:", rbErr);
     }
     console.error("Failed to generate new macrocycle:", error);
-    throw new AppError("Failed to generate new macrocycle", 500);
+    throw new AppError("Falha ao gerar um novo macro ciclo", 500);
   } finally {
     try {
       await queryRunner.release();
