@@ -32,6 +32,7 @@ interface IGenerateNextMacroCycle {
   userId: string;
   prompt: string;
   createNewWorkout: boolean;
+  maxSetsPerMicroCycle?: number;
 }
 
 interface IWorkoutPlan {
@@ -70,6 +71,7 @@ export const generateNextMacroCycleService = async ({
   userId,
   prompt,
   createNewWorkout,
+  maxSetsPerMicroCycle = 24,
 }: IGenerateNextMacroCycle): Promise<{
   macroCycle: MacroCycle;
   microCycle: MicroCycle;
@@ -102,17 +104,17 @@ export const generateNextMacroCycleService = async ({
   const volumeAnalysis = await adjustVolumeService(macroCycleId, userId, {
     weights: { firstVsLast: 0.6, weeklyAverage: 0.4 },
     rules: {
-        increase: [
-            { threshold: 20, percentage: 20 },
-            { threshold: 15, percentage: 15 },
-            { threshold: 10, percentage: 10 },
-        ],
-        decrease: [
-            { threshold: -20, percentage: -20 },
-            { threshold: -15, percentage: -15 },
-            { threshold: -10, percentage: -10 },
-        ],
-        maintain: { threshold: 9 },
+      increase: [
+        { threshold: 20, percentage: 20 },
+        { threshold: 15, percentage: 15 },
+        { threshold: 10, percentage: 10 },
+      ],
+      decrease: [
+        { threshold: -20, percentage: -20 },
+        { threshold: -15, percentage: -15 },
+        { threshold: -10, percentage: -10 },
+      ],
+      maintain: { threshold: 9 },
     },
   });
 
@@ -130,8 +132,15 @@ export const generateNextMacroCycleService = async ({
   const dbExercises = await exerciseRepo.find();
   const dbExerciseNames = dbExercises.map((e) => e.name).sort();
 
+
   const muscleLines = volumeAnalysis
-    .map((v: any) => `- ${v.muscleGroup}: ${v.newSuggestedTotalSets} sets`)
+    .map((v: any) => {
+      const limitedSets = Math.min(
+        v.newSuggestedTotalSets,
+        maxSetsPerMicroCycle
+      );
+      return `- ${v.muscleGroup}: ${limitedSets} sets (máx ${maxSetsPerMicroCycle})`;
+    })
     .join("\n");
 
   const aiPrompt = `You are an expert personal trainer. Your task is to create a new workout plan based on the user's progress and goals.
@@ -148,9 +157,23 @@ ${JSON.stringify(oldWorkoutPlan, null, 2)}
 Available exercises in the database (use exactly these names when referencing exercises):
 ${dbExerciseNames.join(", ")}
 
+General rules you must follow when building the plan:
+- Total sets per microcycle for each muscle group cannot exceed ${maxSetsPerMicroCycle}.
+- For **fullbody workouts**:
+  * Include 2 exercises for the 2 main focus muscles (max 3 sets each).
+  * Include 1 exercise per remaining muscle.
+  * Large muscles should preferably get 4 sets, smaller ones 3.
+  * Workouts should have 6–7 exercises.
+  * Total sets per workout: 18–22 (not more).
+- For **push/pull workouts**:
+  * First focus muscle: ~50% of the workout volume with 3 exercises.
+  * Second focus muscle: ~33% of the volume with 2 exercises.
+  * Third focus muscle: ~16% of the volume with 1 exercise.
+- These are guidelines, not strict rules. Prefer to respect them when possible.
+
 Instructions:
-1) Your response MUST be a JSON object following this exact structure: { \"workouts\": [ { \"name\": \"Workout A\", \"exercises\": [ { \"exerciseName\": \"Bench Press\", \"targetSets\": 4 } ] } ] }
-2) The sum of the sets for each muscle group in your generated plan should match the suggested total weekly sets as closely as possible.
+1) Your response MUST be a JSON object following this exact structure: { "workouts": [ { "name": "Workout A", "exercises": [ { "exerciseName": "Bench Press", "targetSets": 4 } ] } ] }
+2) The sum of the sets for each muscle group in your generated plan should match the suggested total weekly sets as closely as possible, while following the rules above.
 3) If createNewWorkout is false, use the same exercises as the old plan, only adjusting the sets.
 4) If createNewWorkout is true, you may suggest new exercises, but they MUST be in the available exercises list above.
 5) Distribute the sets intelligently. If totals don't divide perfectly, approximate logically.
@@ -207,32 +230,38 @@ Return ONLY the JSON object (no explanation, no markdown fences).
 
   const aiGeneratedSets: { [key: string]: number } = {};
   for (const muscle of Object.values(MuscleGroup)) {
-      aiGeneratedSets[muscle] = 0;
+    aiGeneratedSets[muscle] = 0;
   }
 
   for (const workout of newWorkoutPlan.workouts) {
-      for (const exercise of workout.exercises) {
-          const dbExercise = dbExercises.find(e => e.name === exercise.exerciseName);
-          if (dbExercise) {
-              aiGeneratedSets[dbExercise.primaryMuscle] += exercise.targetSets;
-              if (dbExercise.secondaryMuscle) {
-                  for (const secondaryMuscle of dbExercise.secondaryMuscle) {
-                      aiGeneratedSets[secondaryMuscle] += exercise.targetSets * 0.5;
-                  }
-              }
+    for (const exercise of workout.exercises) {
+      const dbExercise = dbExercises.find(
+        (e) => e.name === exercise.exerciseName
+      );
+      if (dbExercise) {
+        aiGeneratedSets[dbExercise.primaryMuscle] += exercise.targetSets;
+        if (dbExercise.secondaryMuscle) {
+          for (const secondaryMuscle of dbExercise.secondaryMuscle) {
+            aiGeneratedSets[secondaryMuscle] += exercise.targetSets * 0.5;
           }
+        }
       }
+    }
   }
 
   console.log("\n--- AI vs. Suggested Sets ---");
-  volumeAnalysis.forEach(v => {
-      const aiSets = aiGeneratedSets[v.muscleGroup] || 0;
-      const suggestedSets = v.newSuggestedTotalSets;
-      const diff = aiSets - suggestedSets;
-      console.log(`${v.muscleGroup}: Suggested: ${suggestedSets}, AI: ${aiSets.toFixed(1)}, Diff: ${diff.toFixed(1)}`);
-      if (Math.abs(diff) > 2) { 
-          console.warn(`Large discrepancy for ${v.muscleGroup}. Check AI logic.`);
-      }
+  volumeAnalysis.forEach((v) => {
+    const aiSets = aiGeneratedSets[v.muscleGroup] || 0;
+    const suggestedSets = v.newSuggestedTotalSets;
+    const diff = aiSets - suggestedSets;
+    console.log(
+      `${v.muscleGroup}: Suggested: ${suggestedSets}, AI: ${aiSets.toFixed(
+        1
+      )}, Diff: ${diff.toFixed(1)}`
+    );
+    if (Math.abs(diff) > 2) {
+      console.warn(`Large discrepancy for ${v.muscleGroup}. Check AI logic.`);
+    }
   });
   console.log("---------------------------\n");
 
@@ -280,7 +309,9 @@ Return ONLY the JSON object (no explanation, no markdown fences).
           (e) => e.name === exerciseData.exerciseName
         );
         if (!exercise) {
-          throw new AppError(`Exercise "${exerciseData.exerciseName}" not found in database.`);
+          throw new AppError(
+            `Exercise "${exerciseData.exerciseName}" not found in database.`
+          );
         }
 
         const newWorkoutExercise = new WorkoutExercise();
