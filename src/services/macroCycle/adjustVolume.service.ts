@@ -31,7 +31,8 @@ interface VolumeAnalysis {
 export const adjustVolumeService = async (
   macroCycleId: string,
   userId: string,
-  options: AdjustmentOptions
+  options: AdjustmentOptions,
+  numberOfMicroCycles: number
 ): Promise<VolumeAnalysis[]> => {
   const macroCycleRepo = AppDataSource.getRepository(MacroCycle);
 
@@ -179,7 +180,12 @@ export const adjustVolumeService = async (
 
     const totalSets = totalSetsByMuscleGroup[muscleGroup] || 0;
     const newTotalSets = totalSets * (1 + adjustmentPercentage / 100);
-    const newSuggestedTotalSets = Math.round(newTotalSets * 2) / 2;
+    let newSuggestedTotalSets = Math.round(newTotalSets * 2) / 2;
+
+    const maxSetsPerMicroCycle = 24;
+    if (newSuggestedTotalSets > maxSetsPerMicroCycle) {
+      newSuggestedTotalSets = maxSetsPerMicroCycle;
+    }
 
     analysisResults.push({
       muscleGroup,
