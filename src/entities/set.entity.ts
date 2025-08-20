@@ -1,6 +1,7 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { MicroCycleItem } from "./microCycleItem.entity";
 import { Exercise } from "./exercise.entity";
+import { Side } from "../enum/side.enum";
 
 @Entity("sets")
 export class Set {
@@ -15,6 +16,9 @@ export class Set {
 
     @Column({ type: "varchar", length: 255, nullable: true })
     notes: string | null
+
+    @Column({ type: 'enum', enum: Side, default: Side.BOTH })
+    side: Side;
 
     @ManyToOne(() => MicroCycleItem, (microCycleItem) => microCycleItem.sets, { onDelete: 'CASCADE' })
     microCycleItem: MicroCycleItem;
