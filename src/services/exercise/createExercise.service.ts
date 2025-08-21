@@ -15,6 +15,7 @@ const createExerciseService = async (
     description: exerciseData.description ?? null,
     imageURL: exerciseData.imageURL ?? null,
     secondaryMuscle: exerciseData.secondaryMuscle ?? null,
+    default_unilateral: exerciseData.default_unilateral
   };
 
   const newExercise = exerciseRepo.create(dataForCreate);

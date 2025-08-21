@@ -9,6 +9,7 @@ export const exerciseSchema = z.object({
   description: z.string().nullable().optional(),
   primaryMuscle: z.nativeEnum(MuscleGroup),
   secondaryMuscle: z.array(z.nativeEnum(MuscleGroup)).nullable().default(null),
+  default_unilateral: z.boolean().default(false)
 });
 
 export const returnExerciseSchema = exerciseSchema.extend({
