@@ -7,6 +7,7 @@ export const createMicroCycleSchema = z.object({
 
 export const returnMicroCycleSchema = z.object({
   id: z.string().uuid(),
+  microCycleName: z.string(),
   createdAt: z.date().or(string()),
   trainingDays: z.number().int().positive(),
   user: z.object({
