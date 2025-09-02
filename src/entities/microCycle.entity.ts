@@ -17,6 +17,9 @@ export class MicroCycle {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
+  @Column({ type: "varchar" })
+  microCycleName: string;
+
   @OneToMany(() => MacroCycleItem, item => item.microCycle)
   macroItems: MacroCycleItem[];
 

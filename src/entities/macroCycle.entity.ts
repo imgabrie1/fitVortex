@@ -17,6 +17,9 @@ export class MacroCycle {
   @ManyToOne(() => User, user => user.macroCycles, { onDelete: "CASCADE" })
   user: User;
 
+  @Column({ type: "varchar" })
+  macroCycleName: string;
+
   @Column({ type: "date" })
   startDate: string;
 
