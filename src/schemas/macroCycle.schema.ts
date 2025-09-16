@@ -2,6 +2,7 @@ import z from "zod";
 import { MuscleGroup } from "../enum/muscleGroup.enum";
 
 export const createMacroCycleSchema = z.object({
+  macroCycleName: z.string(),
   microQuantity: z.number().int().positive(),
   startDate:      z.string().regex(/^\d{2}-\d{2}-\d{4}$/),
   endDate:      z.string().regex(/^\d{2}-\d{2}-\d{4}$/),
