@@ -27,13 +27,17 @@ export const getExerciseByIDController = async (req: Request, res: Response): Pr
   return res.status(200).json(exercise)
 }
 
-export const getExercisesController = async (req: Request, res: Response): Promise<Response> => {
-  const { id } = req.params
+export const getExercisesController = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
 
-  const exercise = await getExercisesService()
+  const result = await getExercisesService(page, limit);
 
-  return res.status(200).json(exercise)
-}
+  return res.status(200).json(result);
+};
 
 export const patchExerciseController = async (
   req: Request,
