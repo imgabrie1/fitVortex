@@ -21,7 +21,7 @@ export const returnWorkoutSchema = z.object({
       name: z.string(),
       description: z.string().nullable(),
       primaryMuscle: z.string(),
-      secondaryMuscle: z.string().nullable(),
+      secondaryMuscle: z.array(z.string()).nullable(),
     })
   }))
 });
