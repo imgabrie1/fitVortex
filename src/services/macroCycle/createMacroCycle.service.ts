@@ -13,6 +13,7 @@ export const createMacroCycleService = async (data: ICreateMacroCycle, userID: s
     if(!user) throw new AppError("Usuário não encontrado", 404)
 
     const newMacro = macroRepo.create({
+        macroCycleName: data.macroCycleName,
         microQuantity: data.microQuantity,
         startDate: data.startDate,
         endDate: data.endDate,
