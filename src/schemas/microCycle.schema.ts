@@ -2,6 +2,7 @@ import { string, z } from "zod";
 import { returnWorkoutSchema } from "./workout.schema";
 
 export const createMicroCycleSchema = z.object({
+  microCycleName: z.string(),
   trainingDays: z.number().int().positive()
 });
 

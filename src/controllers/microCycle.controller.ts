@@ -16,6 +16,7 @@ export const createMicroCycleController = async (
 
   const safe = {
     id: micro.id,
+    microCycleName: micro.microCycleName,
     createdAt: micro.createdAt,
     trainingDays: micro.trainingDays,
     user: {
