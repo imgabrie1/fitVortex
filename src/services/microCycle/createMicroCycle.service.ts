@@ -15,6 +15,7 @@ export const createMicroCycleService = async (
   if (!user) throw new AppError("Usuário não encontrado", 404);
 
   const newMicro = microRepo.create({
+    microCycleName: data.microCycleName,
     trainingDays: data.trainingDays,
     user: user
   });
