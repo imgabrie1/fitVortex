@@ -86,10 +86,7 @@ export const generateNextMacroCycleService = async ({
   prompt,
   createNewWorkout,
   maxSetsPerMicroCycle = 24,
-}: IGenerateNextMacroCycle): Promise<{
-  macroCycle: MacroCycle;
-  microCycle: MicroCycle;
-}> => {
+}: IGenerateNextMacroCycle): Promise<MacroCycle> => {
   const macroCycleRepo = AppDataSource.getRepository(MacroCycle);
   const userRepo = AppDataSource.getRepository(User);
   const exerciseRepo = AppDataSource.getRepository(Exercise);
@@ -303,20 +300,13 @@ export const generateNextMacroCycleService = async ({
   await queryRunner.startTransaction();
 
   try {
+    // 1. Create the parent MacroCycle
     const newMacroCycle = new MacroCycle();
     newMacroCycle.user = user;
+    newMacroCycle.macroCycleName = generateMacroCycleName(referenceMacroCycle);
 
-    // >>> FIX: garantir macroCycleName antes do save
-    newMacroCycle.macroCycleName = generateMacroCycleName(referenceMacroCycle as any);
-
-    const refMicroQuantity = (referenceMacroCycle as any).microQuantity;
     const microcyclesCount =
-      Array.isArray(referenceMacroCycle.items) &&
-      referenceMacroCycle.items.length > 0
-        ? referenceMacroCycle.items.length
-        : typeof refMicroQuantity === "number"
-        ? refMicroQuantity
-        : 1;
+      referenceMacroCycle.items?.length || referenceMacroCycle.microQuantity || 1;
 
     newMacroCycle.microQuantity = microcyclesCount;
     newMacroCycle.startDate = new Date().toISOString().split("T")[0];
@@ -327,70 +317,52 @@ export const generateNextMacroCycleService = async ({
       .toISOString()
       .split("T")[0];
 
-    if (!newMacroCycle.macroCycleName) {
-      throw new AppError("macroCycleName is required", 400);
-    }
-    // Debug log útil antes do insert
-    console.debug("Saving newMacroCycle:", {
-      macroCycleName: newMacroCycle.macroCycleName,
-      startDate: newMacroCycle.startDate,
-      endDate: newMacroCycle.endDate,
-      microQuantity: newMacroCycle.microQuantity,
-      userId: user.id,
-    });
-
     await queryRunner.manager.save(newMacroCycle);
 
-    const newMicroCycle = new MicroCycle();
-    newMicroCycle.user = user;
+    // 2. Loop to create each individual MicroCycle and its contents
+    for (let i = 0; i < microcyclesCount; i++) {
+      const newMicroCycle = new MicroCycle();
+      newMicroCycle.user = user;
+      newMicroCycle.microCycleName = generateMicroCycleName(
+        referenceMacroCycle.items[0]?.microCycle,
+        i + 1
+      );
+      newMicroCycle.trainingDays =
+        referenceMacroCycle.items[0]?.microCycle.trainingDays ?? [];
 
-    // >>> FIX: garantir microCycleName antes do save (enumera com #1 pois criamos 1 microcycle que será referenciado)
-    newMicroCycle.microCycleName = generateMicroCycleName(referenceMicroCycle as any, 1);
+      await queryRunner.manager.save(newMicroCycle);
 
-    // manter trainingDays (garantir fallback)
-    newMicroCycle.trainingDays = referenceMicroCycle.trainingDays ?? [];
+      // Create all workouts and exercises for this new microcycle
+      for (const workoutData of newWorkoutPlan.workouts) {
+        const newWorkout = new Workout();
+        newWorkout.name = workoutData.name;
+        await queryRunner.manager.save(newWorkout);
 
-    if (!newMicroCycle.microCycleName) {
-      throw new AppError("microCycleName is required", 400);
-    }
-    // Debug log útil antes do insert
-    console.debug("Saving newMicroCycle:", {
-      microCycleName: newMicroCycle.microCycleName,
-      trainingDays: newMicroCycle.trainingDays,
-      userId: user.id,
-    });
-
-    await queryRunner.manager.save(newMicroCycle);
-
-    for (const workoutData of newWorkoutPlan.workouts) {
-      const newWorkout = new Workout();
-      newWorkout.name = workoutData.name;
-      await queryRunner.manager.save(newWorkout);
-
-      for (const exerciseData of workoutData.exercises) {
-        const exercise = dbExercises.find(
-          (e) => e.name === exerciseData.exerciseName
-        );
-        if (!exercise) {
-          throw new AppError(
-            `Exercise \"${exerciseData.exerciseName}\" not found in database.`
+        for (const exerciseData of workoutData.exercises) {
+          const exercise = dbExercises.find(
+            (e) => e.name === exerciseData.exerciseName
           );
+          if (!exercise) {
+            throw new AppError(
+              `Exercise "${exerciseData.exerciseName}" not found in database.`
+            );
+          }
+
+          const newWorkoutExercise = new WorkoutExercise();
+          newWorkoutExercise.workout = newWorkout;
+          newWorkoutExercise.exercise = exercise;
+          newWorkoutExercise.targetSets = exerciseData.targetSets;
+          await queryRunner.manager.save(newWorkoutExercise);
         }
 
-        const newWorkoutExercise = new WorkoutExercise();
-        newWorkoutExercise.workout = newWorkout;
-        newWorkoutExercise.exercise = exercise;
-        newWorkoutExercise.targetSets = exerciseData.targetSets;
-        await queryRunner.manager.save(newWorkoutExercise);
+        // Link the created workout to the current microcycle
+        const microCycleItem = new MicroCycleItem();
+        microCycleItem.microCycle = newMicroCycle;
+        microCycleItem.workout = newWorkout;
+        await queryRunner.manager.save(microCycleItem);
       }
 
-      const microCycleItem = new MicroCycleItem();
-      microCycleItem.microCycle = newMicroCycle;
-      microCycleItem.workout = newWorkout;
-      await queryRunner.manager.save(microCycleItem);
-    }
-
-    for (let i = 0; i < microcyclesCount; i++) {
+      // Link the created microcycle to the parent macrocycle
       const macroCycleItem = new MacroCycleItem();
       macroCycleItem.macroCycle = newMacroCycle;
       macroCycleItem.microCycle = newMicroCycle;
@@ -399,45 +371,7 @@ export const generateNextMacroCycleService = async ({
 
     await queryRunner.commitTransaction();
 
-    let savedMicroCycle = await queryRunner.manager.findOne(MicroCycle, {
-      where: { id: newMicroCycle.id },
-      relations: {
-        cycleItems: {
-          workout: {
-            workoutExercises: { exercise: true },
-          },
-        },
-      },
-    });
-
-    if (
-      !savedMicroCycle ||
-      !Array.isArray(savedMicroCycle.cycleItems) ||
-      savedMicroCycle.cycleItems.length === 0
-    ) {
-      const baseMicro = await queryRunner.manager.findOne(MicroCycle, {
-        where: { id: newMicroCycle.id },
-      });
-      if (!baseMicro) {
-        throw new AppError("Created microcycle not found", 500);
-      }
-
-      const fetchedItems = await queryRunner.manager.find(MicroCycleItem, {
-        where: { microCycle: { id: newMicroCycle.id } as any },
-        relations: {
-          workout: {
-            workoutExercises: { exercise: true },
-          },
-        },
-        order: { id: "ASC" },
-      });
-
-      savedMicroCycle = {
-        ...baseMicro,
-        cycleItems: fetchedItems,
-      } as MicroCycle;
-    }
-
+    // 3. Fetch and return the complete new MacroCycle
     const savedMacroCycle = await queryRunner.manager.findOne(MacroCycle, {
       where: { id: newMacroCycle.id },
       relations: {
@@ -453,24 +387,16 @@ export const generateNextMacroCycleService = async ({
       },
     });
 
-    if (!savedMicroCycle || !savedMacroCycle) {
-      throw new AppError("Failed to load created macro/micro cycle", 500);
+    if (!savedMacroCycle) {
+      throw new AppError("Failed to load created macro cycle", 500);
     }
 
-    return { macroCycle: savedMacroCycle, microCycle: savedMicroCycle };
+    return savedMacroCycle;
   } catch (error) {
-    try {
-      await queryRunner.rollbackTransaction();
-    } catch (rbErr) {
-      console.error("Rollback failed:", rbErr);
-    }
+    await queryRunner.rollbackTransaction();
     console.error("Failed to generate new macrocycle:", error);
     throw new AppError("Failed to generate new macrocycle", 500);
   } finally {
-    try {
-      await queryRunner.release();
-    } catch (relErr) {
-      console.error("Failed to release query runner:", relErr);
-    }
+    await queryRunner.release();
   }
 };
