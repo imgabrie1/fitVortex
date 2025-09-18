@@ -25,7 +25,10 @@ import { MacroCycleItem } from "../../entities/macroCycleItem.entity";
 import { MicroCycleItem } from "../../entities/microCycleItem.entity";
 
 import { GoogleGenAI } from "@google/genai";
-import { MuscleGroup } from "../../enum/muscleGroup.enum";
+import {
+  MuscleGroup,
+  getMuscleGroupParents,
+} from "../../enum/muscleGroup.enum";
 
 interface IGenerateNextMacroCycle {
   macroCycleId: string;
@@ -130,55 +133,64 @@ export const generateNextMacroCycleService = async ({
   }));
 
   const dbExercises = await exerciseRepo.find();
-  const dbExerciseNames = dbExercises.map((e) => e.name).sort();
+  const exercisesForPrompt = dbExercises.map((e) => ({
+    name: e.name,
+    primaryMuscle: e.primaryMuscle,
+    secondaryMuscles: e.secondaryMuscle,
+  }));
 
-  const muscleLines = volumeAnalysis
-    .map((v: any) => {
-      const limitedSets = Math.min(
-        v.newSuggestedTotalSets,
-        maxSetsPerMicroCycle
-      );
-      return `- ${v.muscleGroup}: ${limitedSets} sets (máx ${maxSetsPerMicroCycle})`;
+  const analysisForPrompt = volumeAnalysis.map(
+    ({ muscleGroup, newSuggestedTotalSets, suggestion, combinedChange }) => ({
+      muscleGroup,
+      newSuggestedTotalSets,
+      suggestion,
+      combinedChange: combinedChange.toFixed(2) + "%",
     })
-    .join("\n");
+  );
 
-  const aiPrompt = `You are an expert personal trainer. Your task is to create a new workout plan based on the user's progress and goals.
+  const aiPrompt = `You are an expert personal trainer. Your task is to create a new workout plan based on
+ the user\'s progress and goals.
 
-User's goal: "${prompt}"
-Should create a new workout from scratch? ${createNewWorkout}
+    User's goal: "${prompt}"
+    Should create a new workout from scratch? ${createNewWorkout}
 
-Based on the last macrocycle analysis, here are the new suggested total weekly sets for each muscle group:
-${muscleLines}
+    This is the detailed performance analysis from the last macrocycle. Use it to guide your decisions:
+    ${JSON.stringify(analysisForPrompt, null, 2)}
 
-This was the workout structure from the last microcycle:
-${JSON.stringify(oldWorkoutPlan, null, 2)}
+    This was the workout structure from the last microcycle:
+    ${JSON.stringify(oldWorkoutPlan, null, 2)}
 
-Available exercises in the database (use exactly these names when referencing exercises):
-${dbExerciseNames.join(", ")}
+    This is the complete list of available exercises from the database, with their target muscles. You MUST use
+ this information to select the correct exercises:
+    ${JSON.stringify(exercisesForPrompt, null, 2)}
 
-General rules you must follow when building the plan:
-- Total sets per microcycle for each muscle group cannot exceed ${maxSetsPerMicroCycle}.
-- For **fullbody workouts**:
-  * Include 2 exercises for the 2 main focus muscles (max 3 sets each).
-  * Include 1 exercise per remaining muscle.
-  * Large muscles should preferably get 4 sets, smaller ones 3.
-  * Workouts should have 6–7 exercises.
-  * Total sets per workout: 18–22 (not more).
-- For **push/pull workouts**:
-  * First focus muscle: ~50% of the workout volume with 3 exercises.
-  * Second focus muscle: ~33% of the volume with 2 exercises.
-  * Third focus muscle: ~16% of the volume with 1 exercise.
-- These are guidelines, not strict rules. Prefer to respect them when possible.
+    General rules you must follow when building the plan:
+    - The total sets for each muscle group in your plan MUST match the 'newSuggestedTotalSets' from the analysis
+ as closely as possible.
+    - Total sets per microcycle for any single muscle group cannot exceed ${maxSetsPerMicroCycle}.
 
-Instructions:
-1) Your response MUST be a JSON object following this exact structure: { "workouts": [ { "name": "Workout A", "exercises": [ { "exerciseName": "Bench Press", "targetSets": 4 } ] } ] }
-2) The sum of the sets for each muscle group in your generated plan should match the suggested total weekly sets as closely as possible, while following the rules above.
-3) If createNewWorkout is false, use the same exercises as the old plan, only adjusting the sets.
-4) If createNewWorkout is true, you may suggest new exercises, but they MUST be in the available exercises list above.
-5) Distribute the sets intelligently. If totals don't divide perfectly, approximate logically.
+    **Intelligent Distribution Logic (VERY IMPORTANT):**
+    - Look at the performance of subgroups. If a parent group's volume is 'maintain' (e.g., 'Peito (Total)'), but
+ a subgroup 'increase'd (e.g., 'Peito Superior'), you should shift focus. Allocate more of the total sets to 
+ exercises for the improving subgroup.
+    - Conversely, if a subgroup 'decrease'd, allocate fewer sets to it, redistributing them to subgroups that are
+ stable or improving.
+    - Use the 'combinedChange' percentage to gauge the magnitude of the trend. A large positive change warrants a
+ more significant focus shift.
+    - This rebalancing is a priority, but only if it fits within the total set counts and other rules.
 
-Return ONLY the JSON object (no explanation, no markdown fences).
-`;
+    Instructions:
+    1) Your response MUST be a JSON object following this exact structure: { "workouts": [ { "name": "Workout A",
+ "exercises": [ { "exerciseName": "Bench Press", "targetSets": 4 } ] } ] }
+    2) When selecting exercises, you MUST use the exact 'name' from the list of available exercises provided.
+    3) If createNewWorkout is false, use the same exercises as the old plan, only adjusting the sets according to
+ the analysis.
+    4) If createNewWorkout is true, you may suggest new exercises, but they MUST be from the available exercises
+ list.
+    5) Distribute the sets intelligently. If totals don't divide perfectly, approximate logically.
+
+    Return ONLY the JSON object (no explanation, no markdown fences).
+    `;
 
   let aiRawText: string | null = null;
   try {
@@ -232,16 +244,27 @@ Return ONLY the JSON object (no explanation, no markdown fences).
     aiGeneratedSets[muscle] = 0;
   }
 
+  // Helper para somar séries na hierarquia
+  const addSetsToHierarchy = (muscle: MuscleGroup, sets: number) => {
+    aiGeneratedSets[muscle] = (aiGeneratedSets[muscle] || 0) + sets;
+    const parents = getMuscleGroupParents(muscle);
+    for (const parent of parents) {
+      aiGeneratedSets[parent] = (aiGeneratedSets[parent] || 0) + sets;
+    }
+  };
+
   for (const workout of newWorkoutPlan.workouts) {
     for (const exercise of workout.exercises) {
       const dbExercise = dbExercises.find(
         (e) => e.name === exercise.exerciseName
       );
       if (dbExercise) {
-        aiGeneratedSets[dbExercise.primaryMuscle] += exercise.targetSets;
+        if (dbExercise.primaryMuscle) {
+          addSetsToHierarchy(dbExercise.primaryMuscle, exercise.targetSets);
+        }
         if (dbExercise.secondaryMuscle) {
           for (const secondaryMuscle of dbExercise.secondaryMuscle) {
-            aiGeneratedSets[secondaryMuscle] += exercise.targetSets * 0.5;
+            addSetsToHierarchy(secondaryMuscle, exercise.targetSets * 0.5);
           }
         }
       }
@@ -309,7 +332,7 @@ Return ONLY the JSON object (no explanation, no markdown fences).
         );
         if (!exercise) {
           throw new AppError(
-            `Exercise "${exerciseData.exerciseName}" not found in database.`
+            `Exercise \"${exerciseData.exerciseName}\" not found in database.`
           );
         }
 
