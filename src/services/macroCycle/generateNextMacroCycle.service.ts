@@ -30,6 +30,17 @@ import {
   getMuscleGroupParents,
 } from "../../enum/muscleGroup.enum";
 
+
+const generateMacroCycleName = (ref?: any) =>
+  ref?.macroCycleName
+    ? `${ref.macroCycleName} — próximo`
+    : `Macrocycle ${new Date().toISOString().split("T")[0]}`;
+
+const generateMicroCycleName = (refMicro?: any, idx = 1) =>
+  refMicro?.microCycleName
+    ? `${refMicro.microCycleName} — copy ${idx}`
+    : `Microcycle ${new Date().toISOString().split("T")[0]} #${idx}`;
+
 interface IGenerateNextMacroCycle {
   macroCycleId: string;
   userId: string;
@@ -171,7 +182,7 @@ export const generateNextMacroCycleService = async ({
 
     **Intelligent Distribution Logic (VERY IMPORTANT):**
     - Look at the performance of subgroups. If a parent group's volume is 'maintain' (e.g., 'Peito (Total)'), but
- a subgroup 'increase'd (e.g., 'Peito Superior'), you should shift focus. Allocate more of the total sets to 
+ a subgroup 'increase'd (e.g., 'Peito Superior'), you should shift focus. Allocate more of the total sets to
  exercises for the improving subgroup.
     - Conversely, if a subgroup 'decrease'd, allocate fewer sets to it, redistributing them to subgroups that are
  stable or improving.
@@ -295,6 +306,9 @@ export const generateNextMacroCycleService = async ({
     const newMacroCycle = new MacroCycle();
     newMacroCycle.user = user;
 
+    // >>> FIX: garantir macroCycleName antes do save
+    newMacroCycle.macroCycleName = generateMacroCycleName(referenceMacroCycle as any);
+
     const refMicroQuantity = (referenceMacroCycle as any).microQuantity;
     const microcyclesCount =
       Array.isArray(referenceMacroCycle.items) &&
@@ -305,7 +319,6 @@ export const generateNextMacroCycleService = async ({
         : 1;
 
     newMacroCycle.microQuantity = microcyclesCount;
-
     newMacroCycle.startDate = new Date().toISOString().split("T")[0];
     const duration =
       new Date(referenceMacroCycle.endDate).getTime() -
@@ -314,11 +327,39 @@ export const generateNextMacroCycleService = async ({
       .toISOString()
       .split("T")[0];
 
+    if (!newMacroCycle.macroCycleName) {
+      throw new AppError("macroCycleName is required", 400);
+    }
+    // Debug log útil antes do insert
+    console.debug("Saving newMacroCycle:", {
+      macroCycleName: newMacroCycle.macroCycleName,
+      startDate: newMacroCycle.startDate,
+      endDate: newMacroCycle.endDate,
+      microQuantity: newMacroCycle.microQuantity,
+      userId: user.id,
+    });
+
     await queryRunner.manager.save(newMacroCycle);
 
     const newMicroCycle = new MicroCycle();
     newMicroCycle.user = user;
-    newMicroCycle.trainingDays = referenceMicroCycle.trainingDays;
+
+    // >>> FIX: garantir microCycleName antes do save (enumera com #1 pois criamos 1 microcycle que será referenciado)
+    newMicroCycle.microCycleName = generateMicroCycleName(referenceMicroCycle as any, 1);
+
+    // manter trainingDays (garantir fallback)
+    newMicroCycle.trainingDays = referenceMicroCycle.trainingDays ?? [];
+
+    if (!newMicroCycle.microCycleName) {
+      throw new AppError("microCycleName is required", 400);
+    }
+    // Debug log útil antes do insert
+    console.debug("Saving newMicroCycle:", {
+      microCycleName: newMicroCycle.microCycleName,
+      trainingDays: newMicroCycle.trainingDays,
+      userId: user.id,
+    });
+
     await queryRunner.manager.save(newMicroCycle);
 
     for (const workoutData of newWorkoutPlan.workouts) {
