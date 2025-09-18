@@ -117,3 +117,18 @@ export const MuscleGroupHierarchy: Record<string, MuscleGroup[]> = {
     MuscleGroup.ABS_OBLIQUES,
   ],
 };
+
+export const getMuscleGroupParents = (
+  muscleGroup: MuscleGroup
+): MuscleGroup[] => {
+  const parents: MuscleGroup[] = [];
+  for (const parent in MuscleGroupHierarchy) {
+    if (MuscleGroupHierarchy[parent].includes(muscleGroup)) {
+      parents.push(parent as MuscleGroup);
+      // Recursivamente, encontre os pais dos pais
+      parents.push(...getMuscleGroupParents(parent as MuscleGroup));
+    }
+  }
+  // Remove duplicatas
+  return [...new Set(parents)];
+};
