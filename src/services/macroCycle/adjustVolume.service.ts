@@ -1,7 +1,11 @@
 import { AppDataSource } from "../../data-source";
 import { MacroCycle } from "../../entities/macroCycle.entity";
 import { AppError } from "../../errors";
-import { MuscleGroup } from "../../enum/muscleGroup.enum";
+import {
+  MuscleGroup,
+  getMuscleGroupParents,
+  MuscleGroupHierarchy,
+} from "../../enum/muscleGroup.enum";
 
 interface AdjustmentOptions {
   weights: {
@@ -71,40 +75,53 @@ export const adjustVolumeService = async (
   );
 
   const volumesByMuscleGroup: { [key: string]: number[] } = {};
+
   for (const item of sortedItems) {
     for (const volume of item.microCycle.volumes) {
-      const muscleGroupKey = volume.muscleGroup as string;
-      if (!volumesByMuscleGroup[muscleGroupKey]) {
-        volumesByMuscleGroup[muscleGroupKey] = [];
+      const mg = volume.muscleGroup as MuscleGroup;
+      // garante a chave do próprio grupo
+      if (!volumesByMuscleGroup[mg]) volumesByMuscleGroup[mg] = [];
+      volumesByMuscleGroup[mg].push(volume.totalVolume);
+
+      // propaga o total para todos os pais (recursivamente) via sua função existente
+      const parents = getMuscleGroupParents(mg);
+      for (const parent of parents) {
+        if (!volumesByMuscleGroup[parent]) volumesByMuscleGroup[parent] = [];
+        volumesByMuscleGroup[parent].push(volume.totalVolume);
       }
-      volumesByMuscleGroup[muscleGroupKey]!.push(volume.totalVolume);
     }
   }
 
   const referenceMicroCycle = sortedItems[0].microCycle;
   const totalSetsByMuscleGroup: { [key: string]: number } = {};
 
+  const addSetsToHierarchy = (muscle: MuscleGroup, sets: number) => {
+    totalSetsByMuscleGroup[muscle] =
+      (totalSetsByMuscleGroup[muscle] || 0) + sets;
+    const parents = getMuscleGroupParents(muscle);
+    for (const parent of parents) {
+      totalSetsByMuscleGroup[parent] =
+        (totalSetsByMuscleGroup[parent] || 0) + sets;
+    }
+  };
+
   if (referenceMicroCycle.cycleItems) {
     for (const cycleItem of referenceMicroCycle.cycleItems) {
       const workout = cycleItem.workout;
       if (workout && workout.workoutExercises) {
         for (const workoutExercise of workout.workoutExercises) {
-          const primaryMuscleKey = workoutExercise.exercise
-            .primaryMuscle as string;
-          const secondaryMuscleKey = workoutExercise.exercise
-            .secondaryMuscle as string | null;
+          const primaryMuscle = workoutExercise.exercise.primaryMuscle;
+          const secondaryMuscles = workoutExercise.exercise.secondaryMuscle;
           const sets = workoutExercise.targetSets;
 
-          if (!totalSetsByMuscleGroup[primaryMuscleKey]) {
-            totalSetsByMuscleGroup[primaryMuscleKey] = 0;
+          if (primaryMuscle) {
+            addSetsToHierarchy(primaryMuscle, sets);
           }
-          totalSetsByMuscleGroup[primaryMuscleKey] += sets;
 
-          if (secondaryMuscleKey) {
-            if (!totalSetsByMuscleGroup[secondaryMuscleKey]) {
-              totalSetsByMuscleGroup[secondaryMuscleKey] = 0;
+          if (secondaryMuscles) {
+            for (const secondaryMuscle of secondaryMuscles) {
+              addSetsToHierarchy(secondaryMuscle, sets * 0.5); // 50% do volume para secundários
             }
-            totalSetsByMuscleGroup[secondaryMuscleKey] += sets * 0.5;
           }
         }
       }
@@ -114,6 +131,14 @@ export const adjustVolumeService = async (
   const analysisResults: VolumeAnalysis[] = [];
 
   for (const muscleGroupStr in volumesByMuscleGroup) {
+    const isSubgroup = Object.values(MuscleGroupHierarchy).some((subgroups) =>
+      subgroups.includes(muscleGroupStr as MuscleGroup)
+    );
+
+    if (isSubgroup) {
+      continue;
+    }
+
     const muscleGroup = muscleGroupStr as MuscleGroup;
     const volumes = volumesByMuscleGroup[muscleGroup]!;
 

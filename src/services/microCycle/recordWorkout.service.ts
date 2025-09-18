@@ -6,9 +6,11 @@ import { WorkoutVolume } from "../../entities/workoutVolume.entity";
 import { WorkoutVolumeEntry } from "../../entities/workoutVolumeEntry.entity";
 import { AppError } from "../../errors";
 import { TRecordWorkout } from "../../interfaces/set.interface";
-import { MuscleGroup } from "../../enum/muscleGroup.enum";
+import {
+  MuscleGroup,
+  getMuscleGroupParents,
+} from "../../enum/muscleGroup.enum";
 import { Workout } from "../../entities/workout.entity";
-import { MicroCycle } from "../../entities/microCycle.entity";
 import { MicroCycleVolume } from "../../entities/microCycleVolume.entity";
 import { Side } from "../../enum/side.enum";
 
@@ -47,11 +49,25 @@ export const recordWorkoutService = async (
   const volumeByMuscleGroup: { [key in MuscleGroup]?: number } = {};
   const setsByPrimaryMuscle: { [key in MuscleGroup]?: number } = {};
 
+  const addVolumeToHierarchy = (muscle: MuscleGroup, volume: number) => {
+    volumeByMuscleGroup[muscle] = (volumeByMuscleGroup[muscle] || 0) + volume;
+    const parents = getMuscleGroupParents(muscle);
+    for (const parent of parents) {
+      volumeByMuscleGroup[parent] =
+        (volumeByMuscleGroup[parent] || 0) + volume;
+    }
+  };
+
   await Promise.all(
     payload.exercises.map(async (exerciseData) => {
-      const exercise = await exerciseRepo.findOneBy({ id: exerciseData.exerciseID });
+      const exercise = await exerciseRepo.findOneBy({
+        id: exerciseData.exerciseID,
+      });
       if (!exercise) {
-        throw new AppError(`Exercício com ID ${exerciseData.exerciseID} não encontrado`, 404);
+        throw new AppError(
+          `Exercício com ID ${exerciseData.exerciseID} não encontrado`,
+          404
+        );
       }
 
       const setsToCreate = exerciseData.sets.map((setData) => {
@@ -69,20 +85,19 @@ export const recordWorkoutService = async (
 
       if (exercise.primaryMuscle) {
         setsByPrimaryMuscle[exercise.primaryMuscle] =
-          (setsByPrimaryMuscle[exercise.primaryMuscle] || 0) + setsToCreate.length;
+          (setsByPrimaryMuscle[exercise.primaryMuscle] || 0) +
+          setsToCreate.length;
       }
 
       for (const set of setsToCreate) {
         const setVolume = set.reps * set.weight;
 
         if (exercise.primaryMuscle) {
-          volumeByMuscleGroup[exercise.primaryMuscle] =
-            (volumeByMuscleGroup[exercise.primaryMuscle] || 0) + setVolume;
+          addVolumeToHierarchy(exercise.primaryMuscle, setVolume);
         }
         if (exercise.secondaryMuscle) {
           for (const muscle of exercise.secondaryMuscle) {
-            volumeByMuscleGroup[muscle] =
-              (volumeByMuscleGroup[muscle] || 0) + setVolume * secondaryMuscleMultiplier;
+            addVolumeToHierarchy(muscle, setVolume * secondaryMuscleMultiplier);
           }
         }
       }
