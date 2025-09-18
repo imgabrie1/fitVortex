@@ -156,95 +156,209 @@ export const generateNextMacroCycleService = async ({
     })
   );
 
-  const aiPrompt = `You are an expert personal trainer. Your task is to create a new workout plan based on
- the user\'s progress and goals.
+  let newWorkoutPlan: IWorkoutPlan;
 
-    User's goal: "${prompt}"
-    Should create a new workout from scratch? ${createNewWorkout}
+  if (createNewWorkout) {
+    const aiPrompt = `You are an expert personal trainer. Your task is to create a new workout plan from scratch based on the user's progress and goals.
 
-    This is the detailed performance analysis from the last macrocycle. Use it to guide your decisions:
-    ${JSON.stringify(analysisForPrompt, null, 2)}
+      User's goal: "${prompt}"
 
-    This was the workout structure from the last microcycle:
-    ${JSON.stringify(oldWorkoutPlan, null, 2)}
+      This is the detailed performance analysis from the last macrocycle. Use it to guide your decisions:
+      ${JSON.stringify(analysisForPrompt, null, 2)}
 
-    This is the complete list of available exercises from the database, with their target muscles. You MUST use
- this information to select the correct exercises:
-    ${JSON.stringify(exercisesForPrompt, null, 2)}
+      This was the workout structure from the last microcycle (for context only):
+      ${JSON.stringify(oldWorkoutPlan, null, 2)}
 
-    General rules you must follow when building the plan:
-    - The total sets for each muscle group in your plan MUST match the 'newSuggestedTotalSets' from the analysis
- as closely as possible.
-    - Total sets per microcycle for any single muscle group cannot exceed ${maxSetsPerMicroCycle}.
+      This is the complete list of available exercises from the database, with their target muscles. You MUST use this information to select the correct exercises:
+      ${JSON.stringify(exercisesForPrompt, null, 2)}
 
-    **Intelligent Distribution Logic (VERY IMPORTANT):**
-    - Look at the performance of subgroups. If a parent group's volume is 'maintain' (e.g., 'Peito (Total)'), but
- a subgroup 'increase'd (e.g., 'Peito Superior'), you should shift focus. Allocate more of the total sets to
- exercises for the improving subgroup.
-    - Conversely, if a subgroup 'decrease'd, allocate fewer sets to it, redistributing them to subgroups that are
- stable or improving.
-    - Use the 'combinedChange' percentage to gauge the magnitude of the trend. A large positive change warrants a
- more significant focus shift.
-    - This rebalancing is a priority, but only if it fits within the total set counts and other rules.
+      General rules you must follow:
+      - The total sets for each muscle group in your plan MUST match the 'newSuggestedTotalSets' from the analysis as closely as possible.
+      - Total sets per microcycle for any single muscle group cannot exceed ${maxSetsPerMicroCycle}.
+      - Look at subgroup performance. If 'Peito (Total)' is 'maintain', but 'Peito Superior' is 'increase', allocate more sets to exercises for 'Peito Superior'.
+      - Use 'combinedChange' to gauge the trend's magnitude for focus shifts.
 
-    Instructions:
-    1) Your response MUST be a JSON object following this exact structure: { "workouts": [ { "name": "Workout A",
- "exercises": [ { "exerciseName": "Bench Press", "targetSets": 4 } ] } ] }
-    2) When selecting exercises, you MUST use the exact 'name' from the list of available exercises provided.
-    3) If createNewWorkout is false, use the same exercises as the old plan, only adjusting the sets according to
- the analysis.
-    4) If createNewWorkout is true, you may suggest new exercises, but they MUST be from the available exercises
- list.
-    5) Distribute the sets intelligently. If totals don't divide perfectly, approximate logically.
+      Instructions:
+      1) Your response MUST be a JSON object following this exact structure: { "workouts": [ { "name": "Workout A", "exercises": [ { "exerciseName": "Bench Press", "targetSets": 4 } ] } ] }
+      2) You MUST use the exact 'name' from the list of available exercises.
+      3) Distribute sets intelligently. If totals don't divide perfectly, approximate logically.
 
-    Return ONLY the JSON object (no explanation, no markdown fences).
-    `;
+      Return ONLY the JSON object (no explanation, no markdown fences).
+      `;
 
-  let aiRawText: string | null = null;
-  try {
-    const model = DEFAULT_MODEL;
+    let aiRawText: string | null = null;
+    try {
+      const model = DEFAULT_MODEL;
+      const resp: any = await genai.models.generateContent({
+        model,
+        contents: [{ role: "user", parts: [{ text: aiPrompt }] }],
+        config: {
+          responseMimeType: "application/json",
+          maxOutputTokens: 800,
+          temperature: 0.2,
+        },
+      });
+      aiRawText =
+        resp?.candidates?.[0]?.content?.[0]?.parts?.[0]?.text ??
+        resp?.text ??
+        null;
+    } catch (err: any) {
+      console.error("Gemini SDK error:", err?.response ?? err?.message ?? err);
+      throw new AppError("AI service request failed", 502);
+    }
 
-    const resp: any = await genai.models.generateContent({
-      model,
-      contents: [{ role: "user", parts: [{ text: aiPrompt }] }],
-      config: {
-        responseMimeType: "application/json",
-        maxOutputTokens: 800,
-        temperature: 0.2,
-      },
+    if (!aiRawText) {
+      throw new AppError("AI returned no usable text", 502);
+    }
+
+    try {
+      const cleaned =
+        typeof aiRawText === "string"
+          ? aiRawText.replace(/```json|```/g, "").trim()
+          : aiRawText;
+      newWorkoutPlan =
+        typeof cleaned === "string"
+          ? JSON.parse(cleaned)
+          : (cleaned as IWorkoutPlan);
+    } catch (parseErr) {
+      console.error("Failed to parse AI JSON:", parseErr, "raw:", aiRawText);
+      throw new AppError("Failed to parse AI response JSON", 502);
+    }
+
+    if (!validateWorkoutPlan(newWorkoutPlan)) {
+      console.error("AI returned invalid workout plan shape:", newWorkoutPlan);
+      throw new AppError("AI returned invalid workout plan", 502);
+    }
+  } else {
+    // ==================================================================
+    // NEW LOGIC FOR createNewWorkout: false
+    // ==================================================================
+    const volumeLedger: {
+      [key in MuscleGroup]?: {
+        neededSets: number;
+        distributedSets: number;
+        combinedChange: number;
+      };
+    } = {};
+
+    volumeAnalysis.forEach((v) => {
+      volumeLedger[v.muscleGroup] = {
+        neededSets: v.newSuggestedTotalSets,
+        distributedSets: 0,
+        combinedChange: v.combinedChange,
+      };
     });
 
-    aiRawText =
-      resp?.candidates?.[0]?.content?.[0]?.parts?.[0]?.text ??
-      resp?.text ??
-      null;
-  } catch (err: any) {
-    console.error("Gemini SDK error:", err?.response ?? err?.message ?? err);
-    throw new AppError("AI service request failed", 502);
-  }
+    const mutableWorkoutPlan = JSON.parse(JSON.stringify(oldWorkoutPlan));
 
-  if (!aiRawText) {
-    throw new AppError("AI returned no usable text", 502);
-  }
+    // --- PASS 1: ADJUST PRIMARY MUSCLES ---
+    for (const workout of mutableWorkoutPlan) {
+      for (const exercise of workout.exercises) {
+        const primaryMuscle = exercise.primaryMuscle as MuscleGroup;
 
-  let newWorkoutPlan: IWorkoutPlan;
-  try {
-    const cleaned =
-      typeof aiRawText === "string"
-        ? aiRawText.replace(/```json|```/g, "").trim()
-        : aiRawText;
-    newWorkoutPlan =
-      typeof cleaned === "string"
-        ? JSON.parse(cleaned)
-        : (cleaned as IWorkoutPlan);
-  } catch (parseErr) {
-    console.error("Failed to parse AI JSON:", parseErr, "raw:", aiRawText);
-    throw new AppError("Failed to parse AI response JSON", 502);
-  }
+        const relevantLedgerMuscle = [primaryMuscle, ...getMuscleGroupParents(primaryMuscle)]
+            .find(m => volumeLedger[m]);
 
-  if (!validateWorkoutPlan(newWorkoutPlan)) {
-    console.error("AI returned invalid workout plan shape:", newWorkoutPlan);
-    throw new AppError("AI returned invalid workout plan", 502);
+        if (relevantLedgerMuscle && volumeLedger[relevantLedgerMuscle]) {
+            const ledgerEntry = volumeLedger[relevantLedgerMuscle]!;
+
+            const oldTotalSetsForGroup = oldWorkoutPlan
+                .flatMap(w => w.exercises)
+                .filter(e => {
+                    const pMuscle = e.primaryMuscle as MuscleGroup;
+                    return pMuscle === relevantLedgerMuscle || getMuscleGroupParents(pMuscle).includes(relevantLedgerMuscle as MuscleGroup);
+                })
+                .reduce((sum, e) => sum + e.targetSets, 0);
+
+            if (oldTotalSetsForGroup > 0) {
+                const proportion = exercise.targetSets / oldTotalSetsForGroup;
+                const newSetsForThisExercise = ledgerEntry.neededSets * proportion;
+                exercise.targetSets = newSetsForThisExercise; // Keep as float for now
+            }
+        }
+      }
+    }
+
+    // --- PASS 2: ADJUST SECONDARY MUSCLES & ROUND ---
+    for (const workout of mutableWorkoutPlan) {
+      for (const exercise of workout.exercises) {
+        const roundedSets = Math.round(exercise.targetSets);
+        exercise.targetSets = roundedSets > 0 ? roundedSets : 1;
+
+        const secondaryMuscles = (exercise.secondaryMuscle || []) as MuscleGroup[];
+        for (const secondaryMuscle of secondaryMuscles) {
+          const secondaryLedgerEntry = volumeLedger[secondaryMuscle];
+
+          const primaryMuscleOnDay = exercise.primaryMuscle as MuscleGroup;
+          const relevantPrimaryLedgerMuscle = [primaryMuscleOnDay, ...getMuscleGroupParents(primaryMuscleOnDay)]
+              .find(m => volumeLedger[m]);
+
+          if (secondaryLedgerEntry && relevantPrimaryLedgerMuscle && volumeLedger[relevantPrimaryLedgerMuscle]) {
+            const primaryLedger = volumeLedger[relevantPrimaryLedgerMuscle]!;
+
+            if (secondaryLedgerEntry.combinedChange > 15 && primaryLedger.combinedChange > -5) {
+              exercise.targetSets += 1;
+            } else if (secondaryLedgerEntry.combinedChange < -15 && exercise.targetSets > 1) {
+              exercise.targetSets -= 1;
+            }
+          }
+        }
+      }
+    }
+
+    // --- PASS 3: RECONCILIATION ---
+    const finalSetsCount: { [key: string]: number } = {};
+    Object.values(MuscleGroup).forEach(m => { finalSetsCount[m] = 0; });
+
+    const addSetsToFinalCount = (muscle: MuscleGroup, sets: number) => {
+        finalSetsCount[muscle] = (finalSetsCount[muscle] || 0) + sets;
+        getMuscleGroupParents(muscle).forEach(p => {
+            finalSetsCount[p] = (finalSetsCount[p] || 0) + sets;
+        });
+    };
+
+    for (const workout of mutableWorkoutPlan) {
+        for (const exercise of workout.exercises) {
+            addSetsToFinalCount(exercise.primaryMuscle, exercise.targetSets);
+        }
+    }
+
+    for (const muscleStr in volumeLedger) {
+      const muscle = muscleStr as MuscleGroup;
+      const ledger = volumeLedger[muscle]!;
+      const currentCount = finalSetsCount[muscle];
+      let diff = Math.round(ledger.neededSets - currentCount);
+
+      if (diff !== 0) {
+        const exercisesForGroup = mutableWorkoutPlan
+          .flatMap((w: any) => w.exercises)
+          .filter((e: any) => {
+            const pMuscle = e.primaryMuscle as MuscleGroup;
+            return pMuscle === muscle || getMuscleGroupParents(pMuscle).includes(muscle);
+          });
+
+        if (exercisesForGroup.length > 0) {
+          const setsPerExercise = Math.ceil(Math.abs(diff) / exercisesForGroup.length);
+          for (const ex of exercisesForGroup) {
+            if (diff === 0) break;
+            const change = Math.sign(diff) * Math.min(setsPerExercise, Math.abs(diff));
+            ex.targetSets += change;
+            if (ex.targetSets < 1) ex.targetSets = 1;
+            diff -= change;
+          }
+        }
+      }
+    }
+
+    newWorkoutPlan = {
+      workouts: mutableWorkoutPlan.map((w: any) => ({
+        name: w.name,
+        exercises: w.exercises.map((e: any) => ({
+          exerciseName: e.exerciseName,
+          targetSets: Math.max(1, Math.round(e.targetSets)), // Final rounding and ensure at least 1 set
+        })),
+      })),
+    };
   }
 
   const aiGeneratedSets: { [key: string]: number } = {};
