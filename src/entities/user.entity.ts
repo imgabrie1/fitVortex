@@ -53,7 +53,7 @@ export class User {
   }
 
   toJSON() {
-    const { password, ...user } = this;
+    const { password, admin, ...user } = this;
     return user;
   }
 }
