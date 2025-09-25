@@ -14,7 +14,6 @@ export const getMicroCycleByIDService = async (microCycleID: string, userID: str
             "cycleItems.microCycle",
             "cycleItems.microCycle.cycleItems",
             "cycleItems.microCycle.cycleItems.workout",
-            "cycleItems.microCycle.cycleItems.workout.exercises",
             "cycleItems.microCycle.cycleItems.sets",
             "cycleItems.microCycle.cycleItems.sets.exercise"
         ]
