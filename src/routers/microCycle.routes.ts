@@ -3,6 +3,7 @@ import {
   addWorkoutsToMicroCycleController,
   createMicroCycleController,
   deleteMicroCycleController,
+  getAllMicroCycleController,
   getMicroCycleByIDController,
 } from "../controllers/microCycle.controller";
 import { recordWorkoutController } from "../controllers/recordWorkout.controller";
@@ -43,6 +44,12 @@ microCycleRoutes.get(
   "/:id",
   ensureUserIsAuthenticatedMiddleware,
   getMicroCycleByIDController
+);
+
+microCycleRoutes.get(
+    "",
+    ensureUserIsAuthenticatedMiddleware,
+    getAllMicroCycleController
 );
 
 export default microCycleRoutes;

@@ -5,6 +5,7 @@ import { addMicroCycleToMacroCycleService } from "../services/macroCycle/addMicr
 import { deleteMacroCycleService } from "../services/macroCycle/deleteMacroCycle.service";
 import { getMacroCycleByIDService } from "../services/macroCycle/getMacroCycleById.service";
 import { adjustVolumeService } from "../services/macroCycle/adjustVolume.service";
+import { getAllMacroCycleService } from "../services/macroCycle/getAllMacro.service";
 
 export const createMacroCycleController = async (req: Request, res: Response): Promise<Response> => {
     const body = req.body
@@ -44,6 +45,14 @@ export const getMacroCycleByIDController = async (req: Request, res: Response): 
     const userID = req.id;
 
     const macroCycle = await getMacroCycleByIDService(id, userID);
+
+    return res.status(200).json(macroCycle);
+};
+
+export const getAllMacroCycleController = async (req: Request, res: Response): Promise<Response> => {
+    const userID = req.id;
+
+    const macroCycle = await getAllMacroCycleService(userID);
 
     return res.status(200).json(macroCycle);
 };
