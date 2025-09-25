@@ -4,6 +4,7 @@ import { createMicroCycleService } from "../services/microCycle/createMicroCycle
 import { returnMicroCycleSchema } from "../schemas/microCycle.schema";
 import { deleteMicroCycleService } from "../services/microCycle/deleteMicroCycle.service";
 import { getMicroCycleByIDService } from "../services/microCycle/getMicroCycleById.service";
+import { getAllMicroCycleService } from "../services/microCycle/getAllMicro.service";
 
 export const createMicroCycleController = async (
   req: Request,
@@ -56,11 +57,25 @@ export const deleteMicroCycleController = async (
   return res.status(204).send();
 };
 
-export const getMicroCycleByIDController = async (req: Request, res: Response): Promise<Response> => {
-    const { id } = req.params;
-    const userID = req.id;
+export const getMicroCycleByIDController = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { id } = req.params;
+  const userID = req.id;
 
-    const microCycle = await getMicroCycleByIDService(id, userID);
+  const microCycle = await getMicroCycleByIDService(id, userID);
 
-    return res.status(200).json(microCycle);
+  return res.status(200).json(microCycle);
+};
+
+export const getAllMicroCycleController = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const userID = req.id;
+
+  const microCycle = await getAllMicroCycleService(userID);
+
+  return res.status(200).json(microCycle);
 };
