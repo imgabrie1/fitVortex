@@ -1,5 +1,6 @@
 import { AppDataSource } from "../../data-source";
 import { MacroCycle } from "../../entities/macroCycle.entity";
+import { MacroCycleItem } from "../../entities/macroCycleItem.entity";
 import { MicroCycle } from "../../entities/microCycle.entity";
 import { AppError } from "../../errors";
 
@@ -9,6 +10,7 @@ export const deleteMacroCycleService = async (
 ): Promise<void> => {
   const macroRepo = AppDataSource.getRepository(MacroCycle);
   const microRepo = AppDataSource.getRepository(MicroCycle);
+  const itemRepo = AppDataSource.getRepository(MacroCycleItem);
 
   const macroCycle = await macroRepo.findOne({
     where: { id: macroCycleID },
@@ -23,8 +25,11 @@ export const deleteMacroCycleService = async (
     throw new AppError("Só pode excluir o próprio macro ciclo", 403);
   }
 
-  if (macroCycle.items) {
+  if (macroCycle.items && macroCycle.items.length > 0) {
     const microCyclesToRemove = macroCycle.items.map((item) => item.microCycle);
+
+    await itemRepo.remove(macroCycle.items);
+
     if (microCyclesToRemove.length > 0) {
       await microRepo.remove(microCyclesToRemove);
     }
