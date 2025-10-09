@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { iWorkout } from "../interfaces/workout.interface";
 import { createWorkoutService } from "../services/workout/createWorkout.service";
 import { getAllUserWorkoutsService } from "../services/workout/getAllUserWorkouts.service";
+import patchWorkoutService from "../services/workout/patchWorkout.service";
 
 export const createWorkoutController = async (
   req: Request,
@@ -26,4 +27,18 @@ export const getAllUserWorkoutsController = async (
   const result = await getAllUserWorkoutsService(page, limit, id);
 
   return res.status(200).json(result);
+};
+
+export const patchWorkoutController = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { id } = req.params;
+
+  let updatedData = {... req.body}
+
+
+  const updatedWorkout = await patchWorkoutService(updatedData, id)
+
+  return res.status(200).json(updatedWorkout)
 };
