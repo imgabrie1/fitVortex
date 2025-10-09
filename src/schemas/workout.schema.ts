@@ -17,7 +17,7 @@ export const workoutSchema = z.object({
     .max(50, "O nome deve ter no máximo 50 caracteres"),
   exercises: z
     .array(workoutExerciseSchema)
-    .min(1, "O treino deve ter no mínimo 1 exercício"),
+    // .min(1, "O treino deve ter no mínimo 1 exercício"),
 });
 
 export const returnWorkoutSchema = z.object({
@@ -37,4 +37,6 @@ export const returnWorkoutSchema = z.object({
     })
   ),
 });
+
+export const updateWorkoutSchema = workoutSchema.partial()
 

@@ -1,7 +1,11 @@
 import { Router } from "express";
-import { createWorkoutController, getAllUserWorkoutsController } from "../controllers/workout.controller";
+import {
+  createWorkoutController,
+  getAllUserWorkoutsController,
+  patchWorkoutController,
+} from "../controllers/workout.controller";
 import ensureDataIsValidMiddleware from "../middlewares/ensureDataIsValid.middleware";
-import { workoutSchema } from "../schemas/workout.schema";
+import { updateWorkoutSchema, workoutSchema } from "../schemas/workout.schema";
 import ensureUserIsAuthenticatedMiddleware from "../middlewares/ensureUserIsAuthenticated.middleware";
 
 const workoutRoutes: Router = Router();
@@ -16,6 +20,13 @@ workoutRoutes.get(
   "/:id",
   ensureUserIsAuthenticatedMiddleware,
   getAllUserWorkoutsController
+);
+
+workoutRoutes.patch(
+  "/:id",
+  ensureUserIsAuthenticatedMiddleware,
+  ensureDataIsValidMiddleware(updateWorkoutSchema),
+  patchWorkoutController
 );
 
 export default workoutRoutes;
