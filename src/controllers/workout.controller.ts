@@ -23,7 +23,6 @@ export const getAllUserWorkoutsController = async (
   const limit = parseInt(req.query.limit as string) || 10;
   const { id } = req;
 
-
   const result = await getAllUserWorkoutsService(page, limit, id);
 
   return res.status(200).json(result);
@@ -35,10 +34,7 @@ export const patchWorkoutController = async (
 ): Promise<Response> => {
   const { id } = req.params;
 
-  let updatedData = {... req.body}
+  const updatedWorkout = await patchWorkoutService(req.body, id);
 
-
-  const updatedWorkout = await patchWorkoutService(updatedData, id)
-
-  return res.status(200).json(updatedWorkout)
+  return res.status(200).json(updatedWorkout);
 };
