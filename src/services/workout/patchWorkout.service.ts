@@ -17,57 +17,68 @@ const patchWorkoutService = async (
   const workoutExerciseRepo = AppDataSource.getRepository(WorkoutExercise);
   const exerciseRepo = AppDataSource.getRepository(Exercise);
 
-  const oldWorkout = await workoutRepo.findOne({
+  const workout = await workoutRepo.findOne({
     where: { id: workoutID },
+    relations: ["workoutExercises", "workoutExercises.exercise"],
   });
 
-  if (!oldWorkout) {
+  if (!workout) {
     throw new AppError("Treino não encontrado", 404);
   }
 
   if (updatedData.name) {
-    oldWorkout.name = updatedData.name;
-    await workoutRepo.save(oldWorkout);
+    workout.name = updatedData.name;
+    await workoutRepo.save(workout);
   }
 
-  if (updatedData.exercises && updatedData.exercises.length >= 0) {
-    await workoutExerciseRepo.delete({ workout: { id: workoutID } });
-
+  if (updatedData.exercises && Array.isArray(updatedData.exercises)) {
     const exercisesPayload = updatedData.exercises as {
       exerciseId: string;
       targetSets: number;
     }[];
 
-    const workoutExercisesPromises = exercisesPayload.map(
-      async (workoutExerciseData) => {
-        const exercise = await exerciseRepo.findOneBy({
-          id: workoutExerciseData.exerciseId,
-        });
+    const currentMaxPosition =
+      workout.workoutExercises.length > 0
+        ? Math.max(...workout.workoutExercises.map((we) => we.position))
+        : -1;
 
-        if (!exercise) {
-          throw new AppError(
-            `Exercício com ID ${workoutExerciseData.exerciseId} não encontrado`,
-            404
-          );
-        }
+    let nextPosition = currentMaxPosition + 1;
 
-        const newWorkoutExercise = workoutExerciseRepo.create({
-          targetSets: workoutExerciseData.targetSets,
-          workout: oldWorkout,
-          exercise: exercise,
-        });
+    for (const { exerciseId, targetSets } of exercisesPayload) {
+      const alreadyExists = workout.workoutExercises.some(
+        (we) => we.exercise.id === exerciseId
+      );
+      if (alreadyExists) continue;
 
-        return await workoutExerciseRepo.save(newWorkoutExercise);
+      const exercise = await exerciseRepo.findOneBy({ id: exerciseId });
+      if (!exercise) {
+        throw new AppError(
+          `Exercício com ID ${exerciseId} não encontrado`,
+          404
+        );
       }
-    );
 
-    await Promise.all(workoutExercisesPromises);
+      const newWorkoutExercise = workoutExerciseRepo.create({
+        targetSets,
+        position: nextPosition++,
+        workout,
+        exercise,
+      });
+
+      await workoutExerciseRepo.save(newWorkoutExercise);
+    }
   }
 
   const updatedWorkout = await workoutRepo.findOne({
     where: { id: workoutID },
     relations: ["workoutExercises", "workoutExercises.exercise"],
   });
+
+  if (!updatedWorkout) {
+    throw new AppError("Erro ao recarregar treino atualizado", 500);
+  }
+
+  updatedWorkout.workoutExercises.sort((a, b) => a.position - b.position);
 
   return returnWorkoutSchema.parse(updatedWorkout);
 };
