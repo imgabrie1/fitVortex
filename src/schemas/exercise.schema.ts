@@ -12,6 +12,14 @@ export const exerciseSchema = z.object({
   default_unilateral: z.boolean().default(false)
 });
 
+export const exerciseFilters = z.object({
+  name: z.string().nullish(),
+  primaryMuscle: z.nativeEnum(MuscleGroup).nullish(),
+  secondaryMuscle: z.nativeEnum(MuscleGroup).nullish(),
+  resistanceType: z.nativeEnum(ResistanceType).nullish(),
+  default_unilateral: z.boolean().nullish()
+});
+
 export const returnExerciseSchema = exerciseSchema.extend({
   id: z.string().uuid(),
 });
