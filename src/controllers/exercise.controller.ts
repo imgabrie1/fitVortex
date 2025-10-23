@@ -1,11 +1,14 @@
 import { Request, Response } from "express";
-import { iExercise } from "../interfaces/exercise.interface";
+import { iExercise, iExerciseFilters } from "../interfaces/exercise.interface";
 import createExerciseService from "../services/exercise/createExercise.service";
 import { getExerciseByIDService } from "../services/exercise/getExerciseById.service";
 import patchExerciseService from "../services/exercise/patchExercise.service";
 import deleteExerciseService from "../services/exercise/deleteExercise.service";
 import { AppError } from "../errors";
 import { getExercisesService } from "../services/exercise/getExercises.service";
+import { MuscleGroup } from "../enum/muscleGroup.enum";
+import { ResistanceType } from "../entities/exercise.entity";
+import { exerciseFilters } from "../schemas/exercise.schema";
 
 export const createExerciseController = async (
   req: Request,
@@ -15,17 +18,19 @@ export const createExerciseController = async (
 
   const newExercise = await createExerciseService(exerciseData);
 
-
   return res.status(201).json(newExercise);
 };
 
-export const getExerciseByIDController = async (req: Request, res: Response): Promise<Response> => {
-  const { id } = req.params
+export const getExerciseByIDController = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { id } = req.params;
 
-  const exercise = await getExerciseByIDService(id)
+  const exercise = await getExerciseByIDService(id);
 
-  return res.status(200).json(exercise)
-}
+  return res.status(200).json(exercise);
+};
 
 export const getExercisesController = async (
   req: Request,
@@ -34,7 +39,15 @@ export const getExercisesController = async (
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
 
-  const result = await getExercisesService(page, limit);
+
+  const filtersResult = exerciseFilters.safeParse(req.query);
+
+  const filters: iExerciseFilters = filtersResult.success
+    ? filtersResult.data
+    : {};
+
+
+  const result = await getExercisesService(page, limit, filters);
 
   return res.status(200).json(result);
 };
@@ -45,12 +58,11 @@ export const patchExerciseController = async (
 ): Promise<Response> => {
   const { id } = req.params;
 
-  let updatedData = {... req.body}
+  let updatedData = { ...req.body };
 
+  const updatedExercise = await patchExerciseService(updatedData, id);
 
-  const updatedExercise = await patchExerciseService(updatedData, id)
-
-  return res.status(200).json(updatedExercise)
+  return res.status(200).json(updatedExercise);
 };
 
 export const deleteExerciseController = async (
@@ -67,4 +79,3 @@ export const deleteExerciseController = async (
 
   return res.status(204).send();
 };
-
