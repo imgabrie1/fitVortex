@@ -10,6 +10,7 @@ import exerciseRoutes from "./routers/exercise.routes";
 import workoutRoutes from "./routers/workout.routes";
 import microCycleRoutes from "./routers/microCycle.routes";
 import macroCycleRoutes from "./routers/macroCycle.routes";
+import { muscleRoutes } from "./routers/muscles.routes";
 
 const app: Application = express()
 
@@ -24,6 +25,8 @@ app.use("/exercise", exerciseRoutes)
 app.use("/workout", workoutRoutes)
 app.use("/microcycle", microCycleRoutes)
 app.use("/macrocycle", macroCycleRoutes)
+app.use("/muscles", muscleRoutes);
+
 
 app.use(handleErrors)
 export default app
