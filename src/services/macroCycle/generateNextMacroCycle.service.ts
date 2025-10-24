@@ -1,17 +1,3 @@
-/*
-  generateNextMacroCycle.service.ts
-  - Reescrito para usar o SDK oficial @google/genai (Gemini)
-  - Instalação: npm install @google/genai
-  - Variáveis de ambiente necessárias:
-      GEMINI_API_KEY (sua API key)
-      GEMINI_MODEL (opcional, default: gemini-2.0-flash)
-
-  Observações:
-  - O SDK e o endpoint podem variar conforme a versão da biblioteca. Ajuste o `import`/instanciação
-    caso sua versão do SDK exponha outra API.
-  - O código valida o formato retornado pela IA antes de gravar no banco e faz rollback em falhas.
-*/
-
 import { AppDataSource } from "../../data-source";
 import { MacroCycle } from "../../entities/macroCycle.entity";
 import { AppError } from "../../errors";
@@ -230,9 +216,6 @@ export const generateNextMacroCycleService = async ({
       throw new AppError("AI returned invalid workout plan", 502);
     }
   } else {
-    // ==================================================================
-    // NEW LOGIC FOR createNewWorkout: false
-    // ==================================================================
     const volumeLedger: {
       [key in MuscleGroup]?: {
         neededSets: number;
@@ -251,7 +234,6 @@ export const generateNextMacroCycleService = async ({
 
     const mutableWorkoutPlan = JSON.parse(JSON.stringify(oldWorkoutPlan));
 
-    // --- PASS 1: ADJUST PRIMARY MUSCLES ---
     for (const workout of mutableWorkoutPlan) {
       for (const exercise of workout.exercises) {
         const primaryMuscle = exercise.primaryMuscle as MuscleGroup;
@@ -273,13 +255,13 @@ export const generateNextMacroCycleService = async ({
             if (oldTotalSetsForGroup > 0) {
                 const proportion = exercise.targetSets / oldTotalSetsForGroup;
                 const newSetsForThisExercise = ledgerEntry.neededSets * proportion;
-                exercise.targetSets = newSetsForThisExercise; // Keep as float for now
+                exercise.targetSets = newSetsForThisExercise;
             }
         }
       }
     }
 
-    // --- PASS 2: ADJUST SECONDARY MUSCLES & ROUND ---
+
     for (const workout of mutableWorkoutPlan) {
       for (const exercise of workout.exercises) {
         const roundedSets = Math.round(exercise.targetSets);
@@ -306,7 +288,6 @@ export const generateNextMacroCycleService = async ({
       }
     }
 
-    // --- PASS 3: RECONCILIATION ---
     const finalSetsCount: { [key: string]: number } = {};
     Object.values(MuscleGroup).forEach(m => { finalSetsCount[m] = 0; });
 
@@ -355,7 +336,7 @@ export const generateNextMacroCycleService = async ({
         name: w.name,
         exercises: w.exercises.map((e: any) => ({
           exerciseName: e.exerciseName,
-          targetSets: Math.max(1, Math.round(e.targetSets)), // Final rounding and ensure at least 1 set
+          targetSets: Math.max(1, Math.round(e.targetSets)),
         })),
       })),
     };
@@ -366,7 +347,6 @@ export const generateNextMacroCycleService = async ({
     aiGeneratedSets[muscle] = 0;
   }
 
-  // Helper para somar séries na hierarquia
   const addSetsToHierarchy = (muscle: MuscleGroup, sets: number) => {
     aiGeneratedSets[muscle] = (aiGeneratedSets[muscle] || 0) + sets;
     const parents = getMuscleGroupParents(muscle);
@@ -414,7 +394,6 @@ export const generateNextMacroCycleService = async ({
   await queryRunner.startTransaction();
 
   try {
-    // 1. Create the parent MacroCycle
     const newMacroCycle = new MacroCycle();
     newMacroCycle.user = user;
     newMacroCycle.macroCycleName = generateMacroCycleName(referenceMacroCycle);
@@ -433,7 +412,6 @@ export const generateNextMacroCycleService = async ({
 
     await queryRunner.manager.save(newMacroCycle);
 
-    // 2. Loop to create each individual MicroCycle and its contents
     for (let i = 0; i < microcyclesCount; i++) {
       const newMicroCycle = new MicroCycle();
       newMicroCycle.user = user;
@@ -446,7 +424,7 @@ export const generateNextMacroCycleService = async ({
 
       await queryRunner.manager.save(newMicroCycle);
 
-      // Create all workouts and exercises for this new microcycle
+      let workoutPosition = 0;
       for (const workoutData of newWorkoutPlan.workouts) {
         const newWorkout = new Workout();
         newWorkout.name = workoutData.name;
@@ -469,14 +447,15 @@ export const generateNextMacroCycleService = async ({
           await queryRunner.manager.save(newWorkoutExercise);
         }
 
-        // Link the created workout to the current microcycle
         const microCycleItem = new MicroCycleItem();
         microCycleItem.microCycle = newMicroCycle;
         microCycleItem.workout = newWorkout;
+        microCycleItem.position = workoutPosition;
         await queryRunner.manager.save(microCycleItem);
+
+        workoutPosition++;
       }
 
-      // Link the created microcycle to the parent macrocycle
       const macroCycleItem = new MacroCycleItem();
       macroCycleItem.macroCycle = newMacroCycle;
       macroCycleItem.microCycle = newMicroCycle;
@@ -485,7 +464,6 @@ export const generateNextMacroCycleService = async ({
 
     await queryRunner.commitTransaction();
 
-    // 3. Fetch and return the complete new MacroCycle
     const savedMacroCycle = await queryRunner.manager.findOne(MacroCycle, {
       where: { id: newMacroCycle.id },
       relations: {

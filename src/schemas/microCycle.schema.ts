@@ -3,7 +3,7 @@ import { returnWorkoutSchema } from "./workout.schema";
 
 export const createMicroCycleSchema = z.object({
   microCycleName: z.string(),
-  trainingDays: z.number().int().positive()
+  trainingDays: z.number().int().positive(),
 });
 
 export const returnMicroCycleSchema = z.object({
@@ -19,5 +19,9 @@ export const returnMicroCycleSchema = z.object({
 });
 
 export const returnMicroCycleWithWorkoutsSchema = returnMicroCycleSchema.extend(
-  { workouts: z.array(returnWorkoutSchema)}
+  { workouts: z.array(returnWorkoutSchema) }
 );
+
+export const reorderWorkoutsSchema = z.object({
+  orderedIds: z.array(z.string().uuid()),
+});

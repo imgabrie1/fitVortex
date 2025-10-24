@@ -3,7 +3,8 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   CreateDateColumn,
-  OneToMany
+  OneToMany,
+  Column,
 } from "typeorm";
 import { MicroCycle } from "./microCycle.entity";
 import { Workout } from "./workout.entity";
@@ -14,14 +15,17 @@ export class MicroCycleItem {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => MicroCycle, mc => mc.cycleItems, { onDelete: 'CASCADE' })
+  @ManyToOne(() => MicroCycle, (mc) => mc.cycleItems, { onDelete: "CASCADE" })
   microCycle: MicroCycle;
 
-  @ManyToOne(() => Workout, w => w.cycleItems, { eager: true })
+  @ManyToOne(() => Workout, (w) => w.cycleItems, { eager: true })
   workout: Workout;
 
   @OneToMany(() => Set, (set) => set.microCycleItem)
   sets: Set[];
+
+  @Column({ type: "int" })
+  position: number;
 
   @CreateDateColumn()
   createdAt: Date;
