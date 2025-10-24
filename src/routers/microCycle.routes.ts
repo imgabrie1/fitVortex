@@ -5,11 +5,12 @@ import {
   deleteMicroCycleController,
   getAllMicroCycleController,
   getMicroCycleByIDController,
+  reorderWorkoutsController,
 } from "../controllers/microCycle.controller";
 import { recordWorkoutController } from "../controllers/recordWorkout.controller";
 import ensureDataIsValidMiddleware from "../middlewares/ensureDataIsValid.middleware";
 import ensureUserIsAuthenticatedMiddleware from "../middlewares/ensureUserIsAuthenticated.middleware";
-import { createMicroCycleSchema } from "../schemas/microCycle.schema";
+import { createMicroCycleSchema, reorderWorkoutsSchema } from "../schemas/microCycle.schema";
 import { recordWorkoutSchema } from "../schemas/set.schema";
 
 const microCycleRoutes: Router = Router();
@@ -32,6 +33,13 @@ microCycleRoutes.patch(
   ensureUserIsAuthenticatedMiddleware,
   ensureDataIsValidMiddleware(recordWorkoutSchema),
   recordWorkoutController
+);
+
+microCycleRoutes.patch(
+  "/:microCycleID/reorder",
+  ensureUserIsAuthenticatedMiddleware,
+  ensureDataIsValidMiddleware(reorderWorkoutsSchema),
+  reorderWorkoutsController
 );
 
 microCycleRoutes.delete(

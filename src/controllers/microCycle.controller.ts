@@ -5,6 +5,7 @@ import { returnMicroCycleSchema } from "../schemas/microCycle.schema";
 import { deleteMicroCycleService } from "../services/microCycle/deleteMicroCycle.service";
 import { getMicroCycleByIDService } from "../services/microCycle/getMicroCycleById.service";
 import { getAllMicroCycleService } from "../services/microCycle/getAllMicro.service";
+import { reorderWorkoutsService } from "../services/microCycle/reorderWorkouts.service";
 
 export const createMicroCycleController = async (
   req: Request,
@@ -78,4 +79,17 @@ export const getAllMicroCycleController = async (
   const microCycle = await getAllMicroCycleService(userID);
 
   return res.status(200).json(microCycle);
+};
+
+export const reorderWorkoutsController = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { microCycleID } = req.params;
+  const { orderedIds } = req.body;
+  const userID = req.id;
+
+  await reorderWorkoutsService(microCycleID, userID, orderedIds);
+
+  return res.status(200).json({ message: "Workouts reordered successfully" });
 };
