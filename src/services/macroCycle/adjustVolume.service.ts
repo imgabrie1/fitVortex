@@ -79,11 +79,9 @@ export const adjustVolumeService = async (
   for (const item of sortedItems) {
     for (const volume of item.microCycle.volumes) {
       const mg = volume.muscleGroup as MuscleGroup;
-      // garante a chave do próprio grupo
       if (!volumesByMuscleGroup[mg]) volumesByMuscleGroup[mg] = [];
       volumesByMuscleGroup[mg].push(volume.totalVolume);
 
-      // propaga o total para todos os pais (recursivamente) via sua função existente
       const parents = getMuscleGroupParents(mg);
       for (const parent of parents) {
         if (!volumesByMuscleGroup[parent]) volumesByMuscleGroup[parent] = [];
@@ -120,7 +118,7 @@ export const adjustVolumeService = async (
 
           if (secondaryMuscles) {
             for (const secondaryMuscle of secondaryMuscles) {
-              addSetsToHierarchy(secondaryMuscle, sets * 0.5); // 50% do volume para secundários
+              addSetsToHierarchy(secondaryMuscle, sets * 0.5);
             }
           }
         }

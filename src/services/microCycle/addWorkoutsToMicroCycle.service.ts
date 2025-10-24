@@ -27,7 +27,13 @@ export const addWorkoutsToMicroCycleService = async (
   const workout = await workoutRepo.findOne({ where: { id: workoutID } });
   if (!workout) throw new AppError("Treino não encontrado", 404);
 
-  const newItem = itemRepo.create({ microCycle: micro, workout });
+  const newPosition = micro.cycleItems.length;
+
+  const newItem = itemRepo.create({
+    microCycle: micro,
+    workout,
+    position: newPosition,
+  });
   await itemRepo.save(newItem);
 
   const updated = await microRepo.findOne({
