@@ -123,6 +123,7 @@ export const generateNextMacroCycleService = async ({
       targetSets: we.targetSets,
       primaryMuscle: we.exercise.primaryMuscle,
       secondaryMuscle: we.exercise.secondaryMuscle,
+      position: we.position
     })),
   }));
 
@@ -430,6 +431,7 @@ export const generateNextMacroCycleService = async ({
         newWorkout.name = workoutData.name;
         await queryRunner.manager.save(newWorkout);
 
+        let workoutExercisePosition = 0;
         for (const exerciseData of workoutData.exercises) {
           const exercise = dbExercises.find(
             (e) => e.name === exerciseData.exerciseName
@@ -444,7 +446,10 @@ export const generateNextMacroCycleService = async ({
           newWorkoutExercise.workout = newWorkout;
           newWorkoutExercise.exercise = exercise;
           newWorkoutExercise.targetSets = exerciseData.targetSets;
+          newWorkoutExercise.position = workoutExercisePosition;
           await queryRunner.manager.save(newWorkoutExercise);
+
+          workoutExercisePosition++;
         }
 
         const microCycleItem = new MicroCycleItem();
