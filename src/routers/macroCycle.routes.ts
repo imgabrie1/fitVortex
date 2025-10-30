@@ -1,8 +1,8 @@
 import { Router } from "express";
 import ensureDataIsValidMiddleware from "../middlewares/ensureDataIsValid.middleware";
-import { createMacroCycleSchema } from "../schemas/macroCycle.schema";
+import { createMacroCycleSchema, patchMacroCycleSchema } from "../schemas/macroCycle.schema";
 import ensureUserIsAuthenticatedMiddleware from "../middlewares/ensureUserIsAuthenticated.middleware";
-import { addMicroCycleToMacroCycleController, createMacroCycleController, deleteMacroCycleController, getMacroCycleByIDController, adjustVolumeController, getAllMacroCycleController } from "../controllers/macroCycle.controller";
+import { addMicroCycleToMacroCycleController, createMacroCycleController, deleteMacroCycleController, getMacroCycleByIDController, adjustVolumeController, getAllMacroCycleController, patchMacroCycleController } from "../controllers/macroCycle.controller";
 import { generateNextMacroCycleController } from "../controllers/generateNextMacroCycle.controller";
 
 const macroCycleRoutes: Router = Router();
@@ -13,6 +13,14 @@ macroCycleRoutes.post(
   ensureDataIsValidMiddleware(createMacroCycleSchema),
   createMacroCycleController
 );
+
+macroCycleRoutes.patch(
+  "/:id",
+  ensureUserIsAuthenticatedMiddleware,
+  ensureDataIsValidMiddleware(patchMacroCycleSchema),
+  patchMacroCycleController
+);
+
 
 macroCycleRoutes.post(
   "/:id/generate-next",
