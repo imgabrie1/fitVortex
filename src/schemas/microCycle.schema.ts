@@ -18,9 +18,15 @@ export const returnMicroCycleSchema = z.object({
   }),
 });
 
-export const returnMicroCycleWithWorkoutsSchema = returnMicroCycleSchema.extend(
-  { workouts: z.array(returnWorkoutSchema) }
-);
+export const patchMicroCycleSchema = createMicroCycleSchema.partial();
+
+export const returnMicroCycleNoRelationsSchema = returnMicroCycleSchema
+  .omit({
+    user: true,
+  })
+  .extend({
+    workouts: z.array(returnWorkoutSchema).optional(),
+  });
 
 export const reorderWorkoutsSchema = z.object({
   orderedIds: z.array(z.string().uuid()),
