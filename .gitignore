@@ -7,5 +7,5 @@ XXXXXXXXXXXXXXXX.txt
 .vercel
 GEMINI.md
 src/migrations
-backup.sql
-backup_fullWorkout.sql
+fitvortex_dump.sql
+cert

@@ -10,12 +10,12 @@ export class WorkoutExercise {
   @Column({ type: "integer" })
   targetSets: number;
 
-  @ManyToOne(() => Workout, (workout) => workout.workoutExercises, {
+  @ManyToOne(() => Workout, (workout: Workout) => workout.workoutExercises, {
     onDelete: "CASCADE",
   })
   workout: Workout;
 
-  @ManyToOne(() => Exercise, (exercise) => exercise.workoutExercises, {
+  @ManyToOne(() => Exercise, (exercise: Exercise) => exercise.workoutExercises, {
     eager: true,
     onDelete: "CASCADE",
   })

@@ -1,3 +1,4 @@
+import fs from "fs";
 import "dotenv/config";
 import "reflect-metadata";
 import { DataSource, DataSourceOptions } from "typeorm";
@@ -13,7 +14,7 @@ const dataSourceConfig = (): DataSourceOptions => {
   const dbUrl: string | undefined = process.env.DATABASE_URL;
 
   if (!dbUrl) {
-    throw new Error("Env var DATABASE_URL does not exists");
+    throw new Error("Env var DATABASE_URL does not exist");
   }
 
   const nodeEnv: string | undefined = process.env.NODE_ENV;
@@ -27,10 +28,22 @@ const dataSourceConfig = (): DataSourceOptions => {
     };
   }
 
+  const getCaCert = () => {
+    if (process.env.DB_SSL_CA) {
+      return process.env.DB_SSL_CA;
+    }
+    const caPath = path.resolve(__dirname, "../cert/ca.pem");
+    return fs.readFileSync(caPath).toString();
+  };
+
   return {
     type: "postgres",
     url: dbUrl,
     synchronize: false,
+    ssl: {
+      ca: getCaCert(),
+      rejectUnauthorized: process.env.NODE_ENV === "production",
+    },
     logging: true,
     migrations: [migrationsPath],
     entities: [entitiesPath],

@@ -1,7 +1,7 @@
 import app from "./app";
 import { AppDataSource } from "./data-source";
 
-const PORT: number = 3000
+const PORT: number = Number(process.env.PORT) || 3000;
 AppDataSource.initialize().then(() => {
     console.log("Database connected!")
     app.listen(PORT, () => {

@@ -12,12 +12,12 @@ export class WorkoutVolume {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @OneToOne(() => Workout, (w) => w.volume, { onDelete: "CASCADE" })
+  @OneToOne(() => Workout, (w: Workout) => w.volume, { onDelete: "CASCADE" })
   workout: Workout;
 
   @OneToMany(
     () => WorkoutVolumeEntry,
-    (entry) => entry.workoutVolume,
+    (entry: WorkoutVolumeEntry) => entry.workoutVolume,
     { cascade: true, eager: true }
   )
   entries: WorkoutVolumeEntry[];
