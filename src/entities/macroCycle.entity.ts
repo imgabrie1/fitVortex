@@ -14,7 +14,9 @@ export class MacroCycle {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => User, user => user.macroCycles, { onDelete: "CASCADE" })
+  @ManyToOne(() => User, (user: User) => user.macroCycles, {
+    onDelete: "CASCADE",
+  })
   user: User;
 
   @Column({ type: "varchar", length: 50 })
@@ -29,9 +31,15 @@ export class MacroCycle {
   @Column({ type: "int" })
   microQuantity: number;
 
-  @OneToMany(() => MacroCycleItem, item => item.macroCycle, { cascade: true })
+  @OneToMany(() => MacroCycleItem, (item: MacroCycleItem) => item.macroCycle, {
+    cascade: true,
+  })
   items: MacroCycleItem[];
 
-  @OneToMany(() => MacroCycleVolume, volume => volume.macroCycle, { cascade: true })
+  @OneToMany(
+    () => MacroCycleVolume,
+    (volume: MacroCycleVolume) => volume.macroCycle,
+    { cascade: true }
+  )
   volumes: MacroCycleVolume[];
 }
