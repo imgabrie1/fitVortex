@@ -36,14 +36,24 @@ const dataSourceConfig = (): DataSourceOptions => {
     return fs.readFileSync(caPath).toString();
   };
 
+  const sslConfig =
+    process.env.NODE_ENV === "production"
+      ? {
+            ca: getCaCert(),
+            rejectUnauthorized: true,
+          }
+        : { rejectUnauthorized: false };
+
+  console.log("--- DATABASE DEBUG ---");
+  console.log("NODE_ENV:", process.env.NODE_ENV);
+  console.log("SSL Config:", sslConfig);
+  console.log("--- END DATABASE DEBUG ---");
+
   return {
     type: "postgres",
     url: dbUrl,
     synchronize: false,
-    ssl: {
-      ca: getCaCert(),
-      rejectUnauthorized: process.env.NODE_ENV === "production",
-    },
+    ssl: sslConfig,
     logging: true,
     migrations: [migrationsPath],
     entities: [entitiesPath],
@@ -53,3 +63,4 @@ const dataSourceConfig = (): DataSourceOptions => {
 const AppDataSource = new DataSource(dataSourceConfig());
 
 export { AppDataSource };
+
