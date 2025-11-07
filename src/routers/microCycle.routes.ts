@@ -54,6 +54,7 @@ microCycleRoutes.delete(
   "/:microCycleID",
   ensureUserIsAuthenticatedMiddleware,
   deleteMicroCycleController
+
 );
 
 microCycleRoutes.get(
