@@ -6,7 +6,6 @@ dist
 XXXXXXXXXXXXXXXX.txt
 .vercel
 GEMINI.md
-src/migrations
 fitvortex_dump.sql
 cert
 count-exercises.ts
