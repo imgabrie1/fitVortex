@@ -9,6 +9,8 @@ import { WorkoutExercise } from "../../entities/workoutExercise.entity";
 import { Exercise } from "../../entities/exercise.entity";
 import { MacroCycleItem } from "../../entities/macroCycleItem.entity";
 import { MicroCycleItem } from "../../entities/microCycleItem.entity";
+import { IMacroCycle } from "../../interfaces/macroCycle.interface";
+import { formatDateToDDMMYYYY } from "../../utils/formatDate";
 
 import { GoogleGenAI } from "@google/genai";
 import {
@@ -73,7 +75,7 @@ export const generateNextMacroCycleService = async ({
   createNewWorkout,
   maxSetsPerMicroCycle = 24,
   legPriority = "Quadríceps (Total)",
-}: IGenerateNextMacroCycle): Promise<MacroCycle> => {
+}: IGenerateNextMacroCycle): Promise<IMacroCycle> => {
   const macroCycleRepo = AppDataSource.getRepository(MacroCycle);
   const userRepo = AppDataSource.getRepository(User);
   const exerciseRepo = AppDataSource.getRepository(Exercise);
@@ -580,7 +582,13 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
       throw new AppError("Falha ao carregar o macro ciclo criado", 500);
     }
 
-    return savedMacroCycle;
+    const response: IMacroCycle = {
+      ...savedMacroCycle,
+      startDate: formatDateToDDMMYYYY(savedMacroCycle.startDate),
+      endDate: formatDateToDDMMYYYY(savedMacroCycle.endDate),
+    };
+
+    return response;
   } catch (error) {
     await queryRunner.rollbackTransaction();
     console.error("Falha ao gerar um novo macro ciclo:", error);
