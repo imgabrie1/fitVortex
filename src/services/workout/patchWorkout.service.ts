@@ -35,6 +35,7 @@ const patchWorkoutService = async (
     const exercisesPayload = updatedData.exercises as {
       exerciseId: string;
       targetSets: number;
+      is_unilateral?: boolean;
     }[];
 
     const currentMaxPosition =
@@ -44,7 +45,9 @@ const patchWorkoutService = async (
 
     let nextPosition = currentMaxPosition + 1;
 
-    for (const { exerciseId, targetSets } of exercisesPayload) {
+    for (const incoming of exercisesPayload) {
+      const { exerciseId, targetSets } = incoming;
+
       const alreadyExists = workout.workoutExercises.some(
         (we) => we.exercise.id === exerciseId
       );
@@ -58,8 +61,14 @@ const patchWorkoutService = async (
         );
       }
 
+      const finalIsUnilateral =
+        typeof incoming.is_unilateral === "boolean"
+          ? incoming.is_unilateral
+          : exercise.default_unilateral;
+
       const newWorkoutExercise = workoutExerciseRepo.create({
         targetSets,
+        is_unilateral: finalIsUnilateral,
         position: nextPosition++,
         workout,
         exercise,

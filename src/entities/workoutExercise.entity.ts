@@ -15,11 +15,18 @@ export class WorkoutExercise {
   })
   workout: Workout;
 
-  @ManyToOne(() => Exercise, (exercise: Exercise) => exercise.workoutExercises, {
-    eager: true,
-    onDelete: "CASCADE",
-  })
+  @ManyToOne(
+    () => Exercise,
+    (exercise: Exercise) => exercise.workoutExercises,
+    {
+      eager: true,
+      onDelete: "CASCADE",
+    }
+  )
   exercise: Exercise;
+
+  @Column({ type: "boolean", default: false })
+  is_unilateral: boolean;
 
   @Column({ type: "int" })
   position: number;

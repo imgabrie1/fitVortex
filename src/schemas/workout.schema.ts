@@ -8,6 +8,7 @@ const workoutExerciseSchema = z.object({
     .number()
     .int()
     .min(1, "O número de séries alvo deve ser no mínimo 1"),
+    is_unilateral: z.boolean()
 });
 
 export const workoutSchema = z.object({
