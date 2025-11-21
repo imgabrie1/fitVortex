@@ -49,7 +49,7 @@ const patchWorkoutService = async (
       const { exerciseId, targetSets } = incoming;
 
       const alreadyExists = workout.workoutExercises.some(
-        (we) => we.exercise.id === exerciseId
+        (we) => String(we.exercise.id) === String(exerciseId)
       );
       if (alreadyExists) continue;
 
@@ -62,9 +62,7 @@ const patchWorkoutService = async (
       }
 
       const finalIsUnilateral =
-        typeof incoming.is_unilateral === "boolean"
-          ? incoming.is_unilateral
-          : exercise.default_unilateral;
+        incoming.is_unilateral ?? exercise.default_unilateral ?? false;
 
       const newWorkoutExercise = workoutExerciseRepo.create({
         targetSets,
