@@ -3,6 +3,7 @@ import { MacroCycle } from "../../entities/macroCycle.entity";
 import { AppError } from "../../errors";
 import { IMacroCycle } from "../../interfaces/macroCycle.interface";
 import { returnMacroCycleSchema } from "../../schemas/macroCycle.schema";
+import { formatDateToDDMMYYYY } from "../../utils/formatDate";
 
 const patchMacroCycleService = async (
   updatedData: Partial<MacroCycle>,
@@ -27,24 +28,11 @@ const patchMacroCycleService = async (
 
   const formatted = {
     ...updatedMacroCycle,
-    startDate: formatDate(updatedMacroCycle.startDate),
-    endDate: formatDate(updatedMacroCycle.endDate),
+    startDate: formatDateToDDMMYYYY(updatedMacroCycle.startDate),
+    endDate: formatDateToDDMMYYYY(updatedMacroCycle.endDate),
   };
 
   return returnMacroCycleSchema.parse(formatted);
 };
-
-function formatDate(date?: string | Date): string | undefined {
-  if (!date) return undefined;
-
-  const d = new Date(date);
-  if (isNaN(d.getTime())) return undefined;
-
-  const day = String(d.getDate()).padStart(2, "0");
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = d.getFullYear();
-
-  return `${day}-${month}-${year}`;
-}
 
 export default patchMacroCycleService;

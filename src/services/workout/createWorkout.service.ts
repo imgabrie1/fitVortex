@@ -18,21 +18,34 @@ export const createWorkoutService = async (
   });
   await workoutRepo.save(workout);
 
-  const workoutExercisesPromises = workoutData.exercises.map(async (workoutExerciseData) => {
-    const exercise = await exerciseRepo.findOneBy({ id: workoutExerciseData.exerciseId });
+  const workoutExercisesPromises = workoutData.exercises.map(
+    async (workoutExerciseData) => {
+      const exercise = await exerciseRepo.findOneBy({
+        id: workoutExerciseData.exerciseId,
+      });
 
-    if (!exercise) {
-      throw new AppError(`Exercício com ID ${workoutExerciseData.exerciseId} não encontrado`, 404);
+      if (!exercise) {
+        throw new AppError(
+          `Exercício com ID ${workoutExerciseData.exerciseId} não encontrado`,
+          404
+        );
+      }
+
+      const finalIsUnilateral =
+        typeof workoutExerciseData.is_unilateral === "boolean"
+          ? workoutExerciseData.is_unilateral
+          : exercise.default_unilateral;
+
+      const workoutExercise = workoutExerciseRepo.create({
+        targetSets: workoutExerciseData.targetSets,
+        is_unilateral: finalIsUnilateral,
+        workout: workout,
+        exercise: exercise,
+      });
+
+      return await workoutExerciseRepo.save(workoutExercise);
     }
-
-    const workoutExercise = workoutExerciseRepo.create({
-      targetSets: workoutExerciseData.targetSets,
-      workout: workout,
-      exercise: exercise,
-    });
-
-    return await workoutExerciseRepo.save(workoutExercise);
-  });
+  );
 
   const workoutExercises = await Promise.all(workoutExercisesPromises);
 
