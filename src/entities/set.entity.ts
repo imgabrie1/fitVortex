@@ -20,9 +20,9 @@ export class Set {
     @Column({ type: 'enum', enum: Side, default: Side.BOTH })
     side: Side;
 
-    @ManyToOne(() => MicroCycleItem, (microCycleItem) => microCycleItem.sets, { onDelete: 'CASCADE' })
+    @ManyToOne(() => MicroCycleItem, (microCycleItem: MicroCycleItem) => microCycleItem.sets, { onDelete: 'CASCADE' })
     microCycleItem: MicroCycleItem;
 
-    @ManyToOne(() => Exercise, (exercise) => exercise.sets, { eager: true })
+    @ManyToOne(() => Exercise, (exercise: Exercise) => exercise.sets, { eager: true })
     exercise: Exercise;
 }

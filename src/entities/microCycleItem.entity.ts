@@ -15,13 +15,13 @@ export class MicroCycleItem {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => MicroCycle, (mc) => mc.cycleItems, { onDelete: "CASCADE" })
+  @ManyToOne(() => MicroCycle, (mc: MicroCycle) => mc.cycleItems, { onDelete: "CASCADE" })
   microCycle: MicroCycle;
 
-  @ManyToOne(() => Workout, (w) => w.cycleItems, { eager: true })
+  @ManyToOne(() => Workout, (w: Workout) => w.cycleItems, { eager: true })
   workout: Workout;
 
-  @OneToMany(() => Set, (set) => set.microCycleItem)
+  @OneToMany(() => Set, (set: Set) => set.microCycleItem)
   sets: Set[];
 
   @Column({ type: "int" })

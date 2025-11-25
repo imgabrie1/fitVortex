@@ -7,7 +7,7 @@ export class MicroCycleVolume {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => MicroCycle, cycle => cycle.volumes)
+  @ManyToOne(() => MicroCycle, (cycle: MicroCycle) => cycle.volumes)
   microCycle: MicroCycle;
 
   @Column({ type: "enum", enum: MuscleGroup })

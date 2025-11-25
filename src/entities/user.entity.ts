@@ -37,10 +37,10 @@ export class User {
   updatedAt: Date | string;
 
 
-  @OneToMany(() => MicroCycle, (microCycle) => microCycle.user)
+  @OneToMany(() => MicroCycle, (microCycle: MicroCycle) => microCycle.user)
   microCycles: MicroCycle[];
 
-  @OneToMany(() => MacroCycle, (macroCycle) => macroCycle.user)
+  @OneToMany(() => MacroCycle, (macroCycle: MacroCycle) => macroCycle.user)
   macroCycles: MacroCycle[];
 
   @BeforeInsert()

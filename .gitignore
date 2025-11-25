@@ -1,11 +1,11 @@
 node_modules/
-*lock*
+pnpm-lock.yaml
 .env
 .vscode
 dist
 XXXXXXXXXXXXXXXX.txt
 .vercel
 GEMINI.md
-src/migrations
-backup.sql
-backup_fullWorkout.sql
+cert
+count-exercises.ts
+*.sql

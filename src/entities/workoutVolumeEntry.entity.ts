@@ -28,7 +28,7 @@ export class WorkoutVolumeEntry {
 
   @ManyToOne(
     () => WorkoutVolume,
-    (wv) => wv.entries,
+    (wv: WorkoutVolume) => wv.entries,
     { onDelete: "CASCADE" }
   )
   workoutVolume: WorkoutVolume;
