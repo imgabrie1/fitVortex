@@ -9,7 +9,6 @@ export const getMicroCycleByIDService = async (microCycleID: string, userID: str
         where: { id: microCycleID },
         relations: [
             "user",
-            "volumes",
             "cycleItems",
             "cycleItems.microCycle",
             "cycleItems.microCycle.cycleItems",
