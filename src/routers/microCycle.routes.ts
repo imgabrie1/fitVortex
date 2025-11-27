@@ -9,6 +9,7 @@ import {
   reorderWorkoutsController,
 } from "../controllers/microCycle.controller";
 import { recordWorkoutController } from "../controllers/recordWorkout.controller";
+import { skipWorkoutController } from "../controllers/skipWorkout.controller";
 import ensureDataIsValidMiddleware from "../middlewares/ensureDataIsValid.middleware";
 import ensureUserIsAuthenticatedMiddleware from "../middlewares/ensureUserIsAuthenticated.middleware";
 import { createMicroCycleSchema, patchMicroCycleSchema, reorderWorkoutsSchema } from "../schemas/microCycle.schema";
@@ -41,6 +42,12 @@ microCycleRoutes.patch(
   ensureUserIsAuthenticatedMiddleware,
   ensureDataIsValidMiddleware(recordWorkoutSchema),
   recordWorkoutController
+);
+
+microCycleRoutes.patch(
+  "/:microCycleID/workouts/:workoutID/skip",
+  ensureUserIsAuthenticatedMiddleware,
+  skipWorkoutController
 );
 
 microCycleRoutes.patch(
