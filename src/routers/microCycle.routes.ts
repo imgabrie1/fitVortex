@@ -9,7 +9,6 @@ import {
   reorderWorkoutsController,
 } from "../controllers/microCycle.controller";
 import { recordWorkoutController } from "../controllers/recordWorkout.controller";
-import { editRecordedWorkoutController } from "../controllers/editRecordedWorkout.controller";
 import { skipWorkoutController } from "../controllers/skipWorkout.controller";
 import ensureDataIsValidMiddleware from "../middlewares/ensureDataIsValid.middleware";
 import ensureUserIsAuthenticatedMiddleware from "../middlewares/ensureUserIsAuthenticated.middleware";
