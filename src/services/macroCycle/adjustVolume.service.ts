@@ -1,6 +1,5 @@
 import { AppDataSource } from "../../data-source";
 import { MacroCycle } from "../../entities/macroCycle.entity";
-import { Set } from "../../entities/set.entity";
 import { AppError } from "../../errors";
 import {
   MuscleGroup,
@@ -46,11 +45,9 @@ export const adjustVolumeService = async (
     relations: [
       "items",
       "items.microCycle",
+      "items.microCycle.volumes",
       "items.microCycle.cycleItems",
-      "items.microCycle.cycleItems.sets",
       "items.microCycle.cycleItems.workout",
-      "items.microCycle.cycleItems.workout.volume",
-      "items.microCycle.cycleItems.workout.volume.entries",
       "items.microCycle.cycleItems.workout.workoutExercises",
       "items.microCycle.cycleItems.workout.workoutExercises.exercise",
       "user",
@@ -78,58 +75,18 @@ export const adjustVolumeService = async (
   );
 
   const volumesByMuscleGroup: { [key: string]: number[] } = {};
-  Object.values(MuscleGroup).forEach((mg) => (volumesByMuscleGroup[mg] = []));
 
   for (const item of sortedItems) {
-    const microCycle = item.microCycle;
-    const microCycleVolumes: { [key in MuscleGroup]?: number } = {};
-    Object.values(MuscleGroup).forEach((mg) => (microCycleVolumes[mg] = 0));
+    for (const volume of item.microCycle.volumes) {
+      const mg = volume.muscleGroup as MuscleGroup;
+      if (!volumesByMuscleGroup[mg]) volumesByMuscleGroup[mg] = [];
+      volumesByMuscleGroup[mg].push(volume.totalVolume);
 
-    for (const cycleItem of microCycle.cycleItems) {
-      const sets = cycleItem.sets;
-      if (!sets || sets.length === 0) {
-        continue;
+      const parents = getMuscleGroupParents(mg);
+      for (const parent of parents) {
+        if (!volumesByMuscleGroup[parent]) volumesByMuscleGroup[parent] = [];
+        volumesByMuscleGroup[parent].push(volume.totalVolume);
       }
-
-      const totalEffort = sets.reduce(
-        (sum, set) => sum + set.reps * set.weight,
-        0
-      );
-      const averageEffort = totalEffort / sets.length;
-      const isSkipped = averageEffort < 3;
-
-      if (!isSkipped) {
-        const workoutVolumes = cycleItem.workout.volume?.entries;
-        if (workoutVolumes) {
-          for (const workoutVolume of workoutVolumes) {
-            const muscle = workoutVolume.muscleGroup;
-            const volume = Number(workoutVolume.volume);
-            microCycleVolumes[muscle] =
-              (microCycleVolumes[muscle] || 0) + volume;
-          }
-        }
-      }
-    }
-
-    const finalMicroCycleVolumes: { [key in MuscleGroup]?: number } = {};
-    for (const muscleStr in microCycleVolumes) {
-      const muscle = muscleStr as MuscleGroup;
-      const volume = microCycleVolumes[muscle]!;
-      if (volume > 0) {
-        finalMicroCycleVolumes[muscle] =
-          (finalMicroCycleVolumes[muscle] || 0) + volume;
-        const parents = getMuscleGroupParents(muscle);
-        for (const parent of parents) {
-          finalMicroCycleVolumes[parent] =
-            (finalMicroCycleVolumes[parent] || 0) + volume;
-        }
-      }
-    }
-
-    for (const muscle in volumesByMuscleGroup) {
-      volumesByMuscleGroup[muscle].push(
-        finalMicroCycleVolumes[muscle as MuscleGroup] || 0
-      );
     }
   }
 

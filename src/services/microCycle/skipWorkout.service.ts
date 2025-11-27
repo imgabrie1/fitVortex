@@ -13,6 +13,7 @@ import { Workout } from "../../entities/workout.entity";
 import { MicroCycleVolume } from "../../entities/microCycleVolume.entity";
 import { Side } from "../../enum/side.enum";
 import { WorkoutExercise } from "../../entities/workoutExercise.entity";
+import { MacroCycleItem } from "../../entities/macroCycleItem.entity";
 
 export const skipWorkoutService = async (
   microCycleID: string,
@@ -27,6 +28,7 @@ export const skipWorkoutService = async (
   const workoutRepo = AppDataSource.getRepository(Workout);
   const microCycleVolumeRepo = AppDataSource.getRepository(MicroCycleVolume);
   const workoutExerciseRepo = AppDataSource.getRepository(WorkoutExercise);
+  const macroCycleItemRepo = AppDataSource.getRepository(MacroCycleItem);
 
   const microCycleItem = await microCycleItemRepo.findOne({
     where: {
@@ -55,6 +57,42 @@ export const skipWorkoutService = async (
     microCycleItem.workout.volume = newVolume;
   }
 
+  let previousSets: Set[] = [];
+  const currentMacroItem = await macroCycleItemRepo.findOne({
+    where: { microCycle: { id: microCycleID } },
+    relations: ["macroCycle"],
+  });
+
+  if (currentMacroItem) {
+    const macroCycle = currentMacroItem.macroCycle;
+    const allMacroItems = await macroCycleItemRepo.find({
+      where: { macroCycle: { id: macroCycle.id } },
+      order: { createdAt: "ASC" },
+      relations: ["microCycle"],
+    });
+
+    const currentIndex = allMacroItems.findIndex(
+      (item) => item.microCycle.id === microCycleID
+    );
+
+    if (currentIndex > 0) {
+      const previousMacroItem = allMacroItems[currentIndex - 1];
+      const previousMicroCycle = previousMacroItem.microCycle;
+
+      const previousMicroCycleItem = await microCycleItemRepo.findOne({
+        where: {
+          microCycle: { id: previousMicroCycle.id },
+          position: microCycleItem.position,
+        },
+        relations: ["sets", "sets.exercise"],
+      });
+
+      if (previousMicroCycleItem && previousMicroCycleItem.sets) {
+        previousSets = previousMicroCycleItem.sets;
+      }
+    }
+  }
+
   const volumeByMuscleGroup: { [key in MuscleGroup]?: number } = {};
   const setsByPrimaryMuscle: { [key in MuscleGroup]?: number } = {};
 
@@ -71,11 +109,16 @@ export const skipWorkoutService = async (
     const numSets = workoutExercise.targetSets;
     const setsToCreate: Set[] = [];
 
+    const previousSetsForExercise = previousSets.filter(
+      (set) => set.exercise.id === exercise.id
+    );
+
     for (let i = 0; i < numSets; i++) {
+      const prevSet = previousSetsForExercise[i];
       const newSet = setRepo.create({
-        reps: 1,
-        weight: 1,
-        side: Side.BOTH,
+        reps: prevSet ? prevSet.reps : 1,
+        weight: prevSet ? prevSet.weight : 1,
+        side: prevSet ? prevSet.side : Side.BOTH,
         microCycleItem,
         exercise,
       });
