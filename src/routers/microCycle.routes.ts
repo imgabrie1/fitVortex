@@ -13,7 +13,11 @@ import { editRecordedWorkoutController } from "../controllers/editRecordedWorkou
 import { skipWorkoutController } from "../controllers/skipWorkout.controller";
 import ensureDataIsValidMiddleware from "../middlewares/ensureDataIsValid.middleware";
 import ensureUserIsAuthenticatedMiddleware from "../middlewares/ensureUserIsAuthenticated.middleware";
-import { createMicroCycleSchema, patchMicroCycleSchema, reorderWorkoutsSchema } from "../schemas/microCycle.schema";
+import {
+  createMicroCycleSchema,
+  patchMicroCycleSchema,
+  reorderWorkoutsSchema,
+} from "../schemas/microCycle.schema";
 import { recordWorkoutSchema } from "../schemas/set.schema";
 
 const microCycleRoutes: Router = Router();
@@ -46,13 +50,6 @@ microCycleRoutes.patch(
 );
 
 microCycleRoutes.patch(
-  "/:microCycleID/workouts/:workoutID/record",
-  ensureUserIsAuthenticatedMiddleware,
-  ensureDataIsValidMiddleware(recordWorkoutSchema),
-  editRecordedWorkoutController
-);
-
-microCycleRoutes.patch(
   "/:microCycleID/workouts/:workoutID/skip",
   ensureUserIsAuthenticatedMiddleware,
   skipWorkoutController
@@ -69,7 +66,6 @@ microCycleRoutes.delete(
   "/:microCycleID",
   ensureUserIsAuthenticatedMiddleware,
   deleteMicroCycleController
-
 );
 
 microCycleRoutes.get(
@@ -79,9 +75,9 @@ microCycleRoutes.get(
 );
 
 microCycleRoutes.get(
-    "",
-    ensureUserIsAuthenticatedMiddleware,
-    getAllMicroCycleController
+  "",
+  ensureUserIsAuthenticatedMiddleware,
+  getAllMicroCycleController
 );
 
 export default microCycleRoutes;
