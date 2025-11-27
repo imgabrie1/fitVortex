@@ -38,7 +38,7 @@ microCycleRoutes.patch(
   addWorkoutsToMicroCycleController
 );
 
-microCycleRoutes.post(
+microCycleRoutes.patch(
   "/:microCycleID/workouts/:workoutID/record",
   ensureUserIsAuthenticatedMiddleware,
   ensureDataIsValidMiddleware(recordWorkoutSchema),
