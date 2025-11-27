@@ -3,6 +3,7 @@ import {
   addWorkoutsToMicroCycleController,
   createMicroCycleController,
   deleteMicroCycleController,
+  deleteWorkoutFromMicroCycleController,
   getAllMicroCycleController,
   getMicroCycleByIDController,
   patchMicroCycleController,
@@ -39,6 +40,12 @@ microCycleRoutes.patch(
   "/:microCycleID/workouts/:workoutID",
   ensureUserIsAuthenticatedMiddleware,
   addWorkoutsToMicroCycleController
+);
+
+microCycleRoutes.delete(
+  "/:microCycleID/workouts/:workoutID",
+  ensureUserIsAuthenticatedMiddleware,
+  deleteWorkoutFromMicroCycleController
 );
 
 microCycleRoutes.patch(

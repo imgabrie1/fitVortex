@@ -7,6 +7,7 @@ import { getMicroCycleByIDService } from "../services/microCycle/getMicroCycleBy
 import { getAllMicroCycleService } from "../services/microCycle/getAllMicro.service";
 import { reorderWorkoutsService } from "../services/microCycle/reorderWorkouts.service";
 import patchMicroCycleService from "../services/microCycle/patchMicroCycle.service";
+import { deleteWorkoutFromMicroCycleService } from "../services/microCycle/deleteWorkout.service";
 
 export const createMicroCycleController = async (
   req: Request,
@@ -60,6 +61,17 @@ export const addWorkoutsToMicroCycleController = async (
   );
 
   return res.status(200).json(updatedMicroCycle);
+};
+
+export const deleteWorkoutFromMicroCycleController = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { microCycleID, workoutID } = req.params;
+
+  await deleteWorkoutFromMicroCycleService(microCycleID, workoutID);
+
+  return res.status(204).send();
 };
 
 export const deleteMicroCycleController = async (
