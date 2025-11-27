@@ -10,12 +10,11 @@ export const getMicroCycleByIDService = async (microCycleID: string, userID: str
         relations: [
             "user",
             "cycleItems",
-            "cycleItems.microCycle",
-            "cycleItems.microCycle.cycleItems",
-            "cycleItems.microCycle.cycleItems.workout",
-            "cycleItems.microCycle.cycleItems.sets",
-            "cycleItems.microCycle.cycleItems.sets.exercise",
-            "cycleItems.microCycle.cycleItems.workout.workoutExercises.exercise"
+            "cycleItems.workout",
+            "cycleItems.workout.workoutExercises",
+            "cycleItems.workout.workoutExercises.exercise",
+            "cycleItems.sets",
+            "cycleItems.sets.exercise"
         ]
     });
 
