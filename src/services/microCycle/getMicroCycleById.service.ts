@@ -18,6 +18,7 @@ export const getMicroCycleByIDService = async (microCycleID: string, userID: str
         ]
     });
 
+    
     if (!microCycle) {
         throw new AppError("Micro ciclo não encontrado", 404);
     }
