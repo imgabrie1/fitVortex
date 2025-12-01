@@ -8,7 +8,6 @@ import {
   patchMicroCycleController,
   reorderWorkoutsController,
 } from "../controllers/microCycle.controller";
-import { recordWorkoutController } from "../controllers/recordWorkout.controller";
 import { skipWorkoutController } from "../controllers/skipWorkout.controller";
 import ensureDataIsValidMiddleware from "../middlewares/ensureDataIsValid.middleware";
 import ensureUserIsAuthenticatedMiddleware from "../middlewares/ensureUserIsAuthenticated.middleware";
@@ -18,6 +17,10 @@ import {
   reorderWorkoutsSchema,
 } from "../schemas/microCycle.schema";
 import { recordWorkoutSchema } from "../schemas/set.schema";
+import {
+  editRecordedWorkoutController,
+  recordWorkoutController,
+} from "../controllers/workout.controller";
 
 const microCycleRoutes: Router = Router();
 
@@ -46,6 +49,13 @@ microCycleRoutes.patch(
   ensureUserIsAuthenticatedMiddleware,
   ensureDataIsValidMiddleware(recordWorkoutSchema),
   recordWorkoutController
+);
+
+microCycleRoutes.patch(
+  "/:microCycleID/workouts/:workoutID/edit",
+  ensureUserIsAuthenticatedMiddleware,
+  ensureDataIsValidMiddleware(recordWorkoutSchema),
+  editRecordedWorkoutController
 );
 
 microCycleRoutes.patch(
