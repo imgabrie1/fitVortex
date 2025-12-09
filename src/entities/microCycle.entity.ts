@@ -5,7 +5,7 @@ import {
   OneToMany,
   ManyToOne,
   CreateDateColumn,
-  JoinColumn
+  JoinColumn,
 } from "typeorm";
 import { User } from "./user.entity";
 import { MicroCycleVolume } from "./microCycleVolume.entity";

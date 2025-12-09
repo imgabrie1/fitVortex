@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class StartMigrationsNew1765322565991 implements MigrationInterface {
-    name = 'StartMigrationsNew1765322565991'
+export class MigrationsInit1765324437285 implements MigrationInterface {
+    name = 'MigrationsInit1765324437285'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`CREATE TABLE "macro_cycle_item" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "macroCycleId" uuid, "microCycleId" uuid, CONSTRAINT "PK_e03ff97bf31d5b71bb07b04667d" PRIMARY KEY ("id"))`);

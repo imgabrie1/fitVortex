@@ -33,13 +33,14 @@ export class MacroCycle {
 
   @OneToMany(() => MacroCycleItem, (item: MacroCycleItem) => item.macroCycle, {
     cascade: true,
+    onDelete: "CASCADE",
   })
   items: MacroCycleItem[];
 
   @OneToMany(
     () => MacroCycleVolume,
     (volume: MacroCycleVolume) => volume.macroCycle,
-    { cascade: true }
+    { cascade: true, onDelete: "CASCADE" }
   )
   volumes: MacroCycleVolume[];
 }
