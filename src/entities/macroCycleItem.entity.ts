@@ -15,7 +15,7 @@ export class MacroCycleItem {
   @ManyToOne(() => MacroCycle, macro => macro.items, { onDelete: 'CASCADE' })
   macroCycle: MacroCycle;
 
-  @ManyToOne(() => MicroCycle, micro => micro.macroItems, { eager: true })
+  @ManyToOne(() => MicroCycle, micro => micro.macroItems, { eager: true, onDelete: 'CASCADE' })
   microCycle: MicroCycle;
 
   @CreateDateColumn()

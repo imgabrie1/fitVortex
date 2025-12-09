@@ -44,6 +44,7 @@ export const getAllUserWorkoutsService = async (
     },
     skip: (page - 1) * safeLimit,
     take: safeLimit,
+    
   });
   if (!data || data.length === 0) {
     throw new AppError("Nenhum treino encontrado", 404);
