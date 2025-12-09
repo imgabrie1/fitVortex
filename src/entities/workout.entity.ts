@@ -33,6 +33,7 @@ export class Workout {
   @OneToOne(() => WorkoutVolume, (volume: WorkoutVolume) => volume.workout, {
     cascade: true,
     eager: true,
+    onDelete: "CASCADE",
   })
   @JoinColumn()
   volume: WorkoutVolume;

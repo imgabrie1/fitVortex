@@ -5,24 +5,31 @@ import { Side } from "../enum/side.enum";
 
 @Entity("sets")
 export class Set {
-    @PrimaryGeneratedColumn("uuid")
-    id: string
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
 
-    @Column({ type: "integer" })
-    reps: number
+  @Column({ type: "integer" })
+  reps: number;
 
-    @Column({ type: "decimal", precision: 5, scale: 2 })
-    weight: number
+  @Column({ type: "decimal", precision: 5, scale: 2 })
+  weight: number;
 
-    @Column({ type: "varchar", length: 255, nullable: true })
-    notes: string | null
+  @Column({ type: "varchar", length: 255, nullable: true })
+  notes: string | null;
 
-    @Column({ type: 'enum', enum: Side, default: Side.BOTH })
-    side: Side;
+  @Column({ type: "enum", enum: Side, default: Side.BOTH })
+  side: Side;
 
-    @ManyToOne(() => MicroCycleItem, (microCycleItem: MicroCycleItem) => microCycleItem.sets, { onDelete: 'CASCADE' })
-    microCycleItem: MicroCycleItem;
+  @ManyToOne(
+    () => MicroCycleItem,
+    (microCycleItem: MicroCycleItem) => microCycleItem.sets,
+    { onDelete: "CASCADE" }
+  )
+  microCycleItem: MicroCycleItem;
 
-    @ManyToOne(() => Exercise, (exercise: Exercise) => exercise.sets, { eager: true })
-    exercise: Exercise;
+  @ManyToOne(() => Exercise, (exercise: Exercise) => exercise.sets, {
+    eager: true,
+    onDelete: "CASCADE",
+  })
+  exercise: Exercise;
 }
