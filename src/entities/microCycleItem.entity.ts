@@ -18,7 +18,7 @@ export class MicroCycleItem {
   @ManyToOne(() => MicroCycle, (mc: MicroCycle) => mc.cycleItems, { onDelete: "CASCADE" })
   microCycle: MicroCycle;
 
-  @ManyToOne(() => Workout, (w: Workout) => w.cycleItems, { eager: true, onDelete: "SET NULL" })
+  @ManyToOne(() => Workout, (w: Workout) => w.cycleItems, { eager: true, onDelete: "CASCADE" })
   workout: Workout;
 
   @OneToMany(() => Set, (set: Set) => set.microCycleItem)

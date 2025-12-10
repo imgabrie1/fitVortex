@@ -24,7 +24,7 @@ export class Workout {
   @OneToMany(
     () => WorkoutExercise,
     (workoutExercise: WorkoutExercise) => workoutExercise.workout,
-    { eager: true }
+    { eager: true, cascade: true }
   )
   workoutExercises: WorkoutExercise[];
 

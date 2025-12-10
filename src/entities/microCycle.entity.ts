@@ -36,6 +36,6 @@ export class MicroCycle {
   @JoinColumn({ name: "userID" })
   user: User;
 
-  @OneToMany(() => MicroCycleItem, item => item.microCycle)
+  @OneToMany(() => MicroCycleItem, item => item.microCycle, { cascade: true })
   cycleItems: MicroCycleItem[];
 }
