@@ -13,7 +13,8 @@ import { Workout } from "../../entities/workout.entity";
 import { MicroCycleVolume } from "../../entities/microCycleVolume.entity";
 import { Side } from "../../enum/side.enum";
 import { WorkoutExercise } from "../../entities/workoutExercise.entity";
-import { MacroCycleItem } from "../../entities/macroCycleItem.entity";
+import { MicroCycle } from "../../entities/microCycle.entity";
+
 
 export const skipWorkoutService = async (
   microCycleID: string,
@@ -28,7 +29,6 @@ export const skipWorkoutService = async (
   const workoutRepo = AppDataSource.getRepository(Workout);
   const microCycleVolumeRepo = AppDataSource.getRepository(MicroCycleVolume);
   const workoutExerciseRepo = AppDataSource.getRepository(WorkoutExercise);
-  const macroCycleItemRepo = AppDataSource.getRepository(MacroCycleItem);
 
   const microCycleItem = await microCycleItemRepo.findOne({
     where: {
@@ -58,26 +58,25 @@ export const skipWorkoutService = async (
   }
 
   let previousSets: Set[] = [];
-  const currentMacroItem = await macroCycleItemRepo.findOne({
-    where: { microCycle: { id: microCycleID } },
-    relations: ["macroCycle"],
+  const microCycleRepo = AppDataSource.getRepository(MicroCycle);
+
+  const currentMicroCycle = await microCycleRepo.findOne({
+    where: { id: microCycleID },
+    relations: ["macroCycle", "macroCycle.microCycles"],
   });
 
-  if (currentMacroItem) {
-    const macroCycle = currentMacroItem.macroCycle;
-    const allMacroItems = await macroCycleItemRepo.find({
-      where: { macroCycle: { id: macroCycle.id } },
-      order: { createdAt: "ASC" },
-      relations: ["microCycle"],
+  if (currentMicroCycle && currentMicroCycle.macroCycle) {
+    const macroCycle = currentMicroCycle.macroCycle;
+    const allMicroCyclesInMacro = macroCycle.microCycles.sort((a, b) => {
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
 
-    const currentIndex = allMacroItems.findIndex(
-      (item) => item.microCycle.id === microCycleID
+    const currentIndex = allMicroCyclesInMacro.findIndex(
+      (mc) => mc.id === microCycleID
     );
 
     if (currentIndex > 0) {
-      const previousMacroItem = allMacroItems[currentIndex - 1];
-      const previousMicroCycle = previousMacroItem.microCycle;
+      const previousMicroCycle = allMicroCyclesInMacro[currentIndex - 1];
 
       const previousMicroCycleItem = await microCycleItemRepo.findOne({
         where: {

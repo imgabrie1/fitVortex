@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class NewInitialMigrations1763757746638 implements MigrationInterface {
-    name = 'NewInitialMigrations1763757746638'
+export class MigrationsInit1765337511012 implements MigrationInterface {
+    name = 'MigrationsInit1765337511012'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`CREATE TABLE "macro_cycle_item" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "macroCycleId" uuid, "microCycleId" uuid, CONSTRAINT "PK_e03ff97bf31d5b71bb07b04667d" PRIMARY KEY ("id"))`);
@@ -25,18 +25,18 @@ export class NewInitialMigrations1763757746638 implements MigrationInterface {
         await queryRunner.query(`CREATE TYPE "public"."workout_volume_entries_musclegroup_enum" AS ENUM('Peito (Total)', 'Peito Superior', 'Peito Médio', 'Peito Inferior', 'Costas (Total)', 'Costas Superior', 'Costas Inferior', 'Dorsais (Latíssimo do Dorso)', 'Rombóides', 'Pernas (Total)', 'Quadríceps (Total)', 'Reto Femoral', 'Vasto Lateral', 'Vasto Medial', 'Vasto Intermédio', 'Posterior de Coxa (Total)', 'Bíceps Femoral', 'Semitendíneo', 'Semimembranoso', 'Panturrilhas (Total)', 'Gastrocnêmio', 'Sóleo', 'Glúteos', 'Ombros (Total)', 'Deltóide Anterior', 'Deltóide Lateral', 'Deltóide Posterior', 'Bíceps (Total)', 'Cabeça Longa do Bíceps', 'Cabeça Curta do Bíceps', 'Braquial', 'Tríceps (Total)', 'Cabeça Longa do Tríceps', 'Cabeça Medial do Tríceps', 'Cabeça Lateral do Tríceps', 'Antebraços', 'Abdominais (Total)', 'Abdominais Superiores', 'Abdominais Inferiores', 'Oblíquos', 'Trapézios')`);
         await queryRunner.query(`CREATE TABLE "workout_volume_entries" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "muscleGroup" "public"."workout_volume_entries_musclegroup_enum" NOT NULL, "volume" double precision NOT NULL DEFAULT '0', "sets" integer NOT NULL DEFAULT '0', "workoutVolumeId" uuid, CONSTRAINT "UQ_dea4a815e0000fcaad9e7c5430d" UNIQUE ("workoutVolumeId", "muscleGroup"), CONSTRAINT "PK_f16200e31414a7c1064829a78f9" PRIMARY KEY ("id"))`);
         await queryRunner.query(`ALTER TABLE "macro_cycle_item" ADD CONSTRAINT "FK_9020235adb9543ae0c714f016e0" FOREIGN KEY ("macroCycleId") REFERENCES "macro_cycle"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "macro_cycle_item" ADD CONSTRAINT "FK_ba09bb37e11ecd83f53d58bbb26" FOREIGN KEY ("microCycleId") REFERENCES "micro_cycle"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "macro_cycle_volume" ADD CONSTRAINT "FK_d5bb7ce3b595e5c4be74a2b285d" FOREIGN KEY ("macroCycleId") REFERENCES "macro_cycle"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "macro_cycle_item" ADD CONSTRAINT "FK_ba09bb37e11ecd83f53d58bbb26" FOREIGN KEY ("microCycleId") REFERENCES "micro_cycle"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "macro_cycle_volume" ADD CONSTRAINT "FK_d5bb7ce3b595e5c4be74a2b285d" FOREIGN KEY ("macroCycleId") REFERENCES "macro_cycle"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "macro_cycle" ADD CONSTRAINT "FK_8a71eacd0731ee9d5f9418332ab" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "micro_cycle_volume" ADD CONSTRAINT "FK_a93d3dd63767b67e9427cc64612" FOREIGN KEY ("microCycleId") REFERENCES "micro_cycle"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "micro_cycle_volume" ADD CONSTRAINT "FK_a93d3dd63767b67e9427cc64612" FOREIGN KEY ("microCycleId") REFERENCES "micro_cycle"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "micro_cycle" ADD CONSTRAINT "FK_ca40d2987f6b628c7aaf5bc6ca6" FOREIGN KEY ("userID") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "workout_exercises" ADD CONSTRAINT "FK_d616bcfffe0b6bb322281ae3754" FOREIGN KEY ("workoutId") REFERENCES "workout"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "workout_exercises" ADD CONSTRAINT "FK_1222e38fcd49c77d6ae78c6b073" FOREIGN KEY ("exerciseId") REFERENCES "exercise"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "sets" ADD CONSTRAINT "FK_764d0ec5fee5e7bddcf69b1f9f5" FOREIGN KEY ("microCycleItemId") REFERENCES "micro_cycle_item"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "sets" ADD CONSTRAINT "FK_cca58e1bb2859ccf722d4633a1b" FOREIGN KEY ("exerciseId") REFERENCES "exercise"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "sets" ADD CONSTRAINT "FK_cca58e1bb2859ccf722d4633a1b" FOREIGN KEY ("exerciseId") REFERENCES "exercise"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "micro_cycle_item" ADD CONSTRAINT "FK_75df0a62600dcbbeea6409ac1e6" FOREIGN KEY ("microCycleId") REFERENCES "micro_cycle"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "micro_cycle_item" ADD CONSTRAINT "FK_3b348dc3746e9ef25e46294c262" FOREIGN KEY ("workoutId") REFERENCES "workout"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "workout" ADD CONSTRAINT "FK_e5cb19199eb45a66180c1ec2b26" FOREIGN KEY ("volumeId") REFERENCES "workout_volumes"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "micro_cycle_item" ADD CONSTRAINT "FK_3b348dc3746e9ef25e46294c262" FOREIGN KEY ("workoutId") REFERENCES "workout"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "workout" ADD CONSTRAINT "FK_e5cb19199eb45a66180c1ec2b26" FOREIGN KEY ("volumeId") REFERENCES "workout_volumes"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "workout_volume_entries" ADD CONSTRAINT "FK_99b8a6cdddf4633b6fd74149e0c" FOREIGN KEY ("workoutVolumeId") REFERENCES "workout_volumes"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
     }
 

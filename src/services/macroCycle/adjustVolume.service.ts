@@ -1,5 +1,6 @@
 import { AppDataSource } from "../../data-source";
 import { MacroCycle } from "../../entities/macroCycle.entity";
+import { MicroCycle } from "../../entities/microCycle.entity"; // Added this line
 import { AppError } from "../../errors";
 import {
   MuscleGroup,
@@ -43,13 +44,12 @@ export const adjustVolumeService = async (
   const macroCycle = await macroCycleRepo.findOne({
     where: { id: macroCycleId, user: { id: userId } },
     relations: [
-      "items",
-      "items.microCycle",
-      "items.microCycle.volumes",
-      "items.microCycle.cycleItems",
-      "items.microCycle.cycleItems.workout",
-      "items.microCycle.cycleItems.workout.workoutExercises",
-      "items.microCycle.cycleItems.workout.workoutExercises.exercise",
+      "microCycles",
+      "microCycles.volumes",
+      "microCycles.cycleItems",
+      "microCycles.cycleItems.workout",
+      "microCycles.cycleItems.workout.workoutExercises",
+      "microCycles.cycleItems.workout.workoutExercises.exercise",
       "user",
     ],
   });
@@ -61,23 +61,23 @@ export const adjustVolumeService = async (
     );
   }
 
-  if (macroCycle.items.length < 2) {
+  if ((macroCycle.microCycles?.length || 0) < 2) {
     throw new AppError(
       "O macrociclo precisa de pelo menos 2 microciclos para análise.",
       400
     );
   }
 
-  const sortedItems = macroCycle.items.sort(
-    (a, b) =>
-      new Date(a.microCycle.createdAt).getTime() -
-      new Date(b.microCycle.createdAt).getTime()
+  const sortedItems = macroCycle.microCycles.sort(
+    (a: MicroCycle, b: MicroCycle) =>
+      new Date(a.createdAt).getTime() -
+      new Date(b.createdAt).getTime()
   );
 
   const volumesByMuscleGroup: { [key: string]: number[] } = {};
 
   for (const item of sortedItems) {
-    for (const volume of item.microCycle.volumes) {
+    for (const volume of item.volumes) { // Changed here
       const mg = volume.muscleGroup as MuscleGroup;
       if (!volumesByMuscleGroup[mg]) volumesByMuscleGroup[mg] = [];
       volumesByMuscleGroup[mg].push(volume.totalVolume);
@@ -90,7 +90,7 @@ export const adjustVolumeService = async (
     }
   }
 
-  const referenceMicroCycle = sortedItems[0].microCycle;
+  const referenceMicroCycle = sortedItems[0]; // Changed here
   const totalSetsByMuscleGroup: { [key: string]: number } = {};
 
   const addSetsToHierarchy = (muscle: MuscleGroup, sets: number) => {

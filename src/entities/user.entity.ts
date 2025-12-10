@@ -36,11 +36,14 @@ export class User {
   @UpdateDateColumn({ type: "date" })
   updatedAt: Date | string;
 
-
-  @OneToMany(() => MicroCycle, (microCycle: MicroCycle) => microCycle.user)
+  @OneToMany(() => MicroCycle, (microCycle: MicroCycle) => microCycle.user, {
+    onDelete: "CASCADE",
+  })
   microCycles: MicroCycle[];
 
-  @OneToMany(() => MacroCycle, (macroCycle: MacroCycle) => macroCycle.user)
+  @OneToMany(() => MacroCycle, (macroCycle: MacroCycle) => macroCycle.user, {
+    onDelete: "CASCADE",
+  })
   macroCycles: MacroCycle[];
 
   @BeforeInsert()

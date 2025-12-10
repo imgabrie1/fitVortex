@@ -1,6 +1,5 @@
 import { AppDataSource } from "../../data-source";
 import { MacroCycle } from "../../entities/macroCycle.entity";
-import { MacroCycleItem } from "../../entities/macroCycleItem.entity";
 import { MicroCycle } from "../../entities/microCycle.entity";
 import { AppError } from "../../errors";
 
@@ -10,17 +9,16 @@ export const addMicroCycleToMacroCycleService = async (
   userID: string
 ): Promise<MacroCycle> => {
   const macroRepo = AppDataSource.getRepository(MacroCycle);
-  const itemRepo = AppDataSource.getRepository(MacroCycleItem);
   const microRepo = AppDataSource.getRepository(MicroCycle);
 
   const macro = await macroRepo.findOne({
     where: { id: macroCycleID },
-    relations: ["user", "items"],
+    relations: ["user", "microCycles"],
   });
   if (!macro) throw new AppError("Macro ciclo não encontrado", 404);
   if (macro.user.id !== userID) throw new AppError("Não autorizado", 403);
 
-  const currentCount = macro.items.length;
+  const currentCount = macro.microCycles.length;
   if (currentCount >= macro.microQuantity) {
     throw new AppError("Limite de micros atingido", 403);
   }
@@ -28,12 +26,12 @@ export const addMicroCycleToMacroCycleService = async (
   const micro = await microRepo.findOneBy({ id: microCycleID });
   if (!micro) throw new AppError("Micro ciclo não encontrado", 404);
 
-  const newItem = itemRepo.create({ macroCycle: macro, microCycle: micro });
-  await itemRepo.save(newItem);
+  micro.macroCycle = macro;
+  await microRepo.save(micro);
 
   const updated = await macroRepo.findOne({
     where: { id: macroCycleID },
-    relations: ["user", "items", "items.microCycle", "volumes"],
+    relations: ["user", "microCycles", "volumes"],
   });
   if (!updated) throw new AppError("Erro ao recarregar MacroCycle", 500);
 
