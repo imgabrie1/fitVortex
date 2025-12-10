@@ -8,7 +8,7 @@ export const getAllMacroCycleService = async (userID: string): Promise<MacroCycl
 
     const macroCycles = await macroCycleRepository.find({
         where: { user: { id: userID } },
-        relations: ["user", "volumes", "items"],
+        relations: ["user", "volumes"],
         order: {
             id: "ASC"
         }
