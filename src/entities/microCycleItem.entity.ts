@@ -15,10 +15,15 @@ export class MicroCycleItem {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => MicroCycle, (mc: MicroCycle) => mc.cycleItems, { onDelete: "CASCADE" })
+  @ManyToOne(() => MicroCycle, (mc: MicroCycle) => mc.cycleItems, {
+    onDelete: "CASCADE",
+  })
   microCycle: MicroCycle;
 
-  @ManyToOne(() => Workout, (w: Workout) => w.cycleItems, { eager: true, onDelete: "CASCADE" })
+  @ManyToOne(() => Workout, (w: Workout) => w.cycleItems, {
+    eager: true,
+    onDelete: "CASCADE",
+  })
   workout: Workout;
 
   @OneToMany(() => Set, (set: Set) => set.microCycleItem)
@@ -26,6 +31,9 @@ export class MicroCycleItem {
 
   @Column({ type: "int" })
   position: number;
+
+  @Column({ type: "boolean", default: false })
+  isSkipped: boolean;
 
   @CreateDateColumn()
   createdAt: Date;
