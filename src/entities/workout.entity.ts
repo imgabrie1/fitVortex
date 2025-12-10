@@ -19,19 +19,18 @@ export class Workout {
   name: string;
 
   @OneToMany(() => MicroCycleItem, (item: MicroCycleItem) => item.workout, {
-    cascade: true,
+    onDelete: "CASCADE",
   })
   cycleItems: MicroCycleItem[];
 
   @OneToMany(
     () => WorkoutExercise,
     (workoutExercise: WorkoutExercise) => workoutExercise.workout,
-    { cascade: true, eager: true }
+    { onDelete: "CASCADE", eager: true }
   )
   workoutExercises: WorkoutExercise[];
 
   @OneToOne(() => WorkoutVolume, (volume: WorkoutVolume) => volume.workout, {
-    cascade: true,
     eager: true,
     onDelete: "CASCADE",
   })

@@ -3,7 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  OneToMany
+  OneToMany,
 } from "typeorm";
 import { User } from "./user.entity";
 import { MacroCycleItem } from "./macroCycleItem.entity";
@@ -32,7 +32,6 @@ export class MacroCycle {
   microQuantity: number;
 
   @OneToMany(() => MacroCycleItem, (item: MacroCycleItem) => item.macroCycle, {
-    cascade: true,
     onDelete: "CASCADE",
   })
   items: MacroCycleItem[];
@@ -40,7 +39,7 @@ export class MacroCycle {
   @OneToMany(
     () => MacroCycleVolume,
     (volume: MacroCycleVolume) => volume.macroCycle,
-    { cascade: true, onDelete: "CASCADE" }
+    { onDelete: "CASCADE" }
   )
   volumes: MacroCycleVolume[];
 }

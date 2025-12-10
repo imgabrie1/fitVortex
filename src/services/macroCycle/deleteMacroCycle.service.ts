@@ -21,5 +21,5 @@ export const deleteMacroCycleService = async (
     throw new AppError("Só pode excluir o próprio macro ciclo", 403);
   }
 
-  await macroRepo.remove(macroCycle);
+  await macroRepo.delete(macroCycle);
 };

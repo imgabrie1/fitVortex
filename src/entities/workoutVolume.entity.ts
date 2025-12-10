@@ -18,7 +18,7 @@ export class WorkoutVolume {
   @OneToMany(
     () => WorkoutVolumeEntry,
     (entry: WorkoutVolumeEntry) => entry.workoutVolume,
-    { cascade: true, eager: true }
+    { onDelete: "CASCADE", eager: true }
   )
   entries: WorkoutVolumeEntry[];
 }
