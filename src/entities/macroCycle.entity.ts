@@ -31,15 +31,12 @@ export class MacroCycle {
   @Column({ type: "int" })
   microQuantity: number;
 
-  @OneToMany(() => MacroCycleItem, (item: MacroCycleItem) => item.macroCycle, {
-    onDelete: "CASCADE",
-  })
+  @OneToMany(() => MacroCycleItem, (item: MacroCycleItem) => item.macroCycle)
   items: MacroCycleItem[];
 
   @OneToMany(
     () => MacroCycleVolume,
-    (volume: MacroCycleVolume) => volume.macroCycle,
-    { onDelete: "CASCADE" }
+    (volume: MacroCycleVolume) => volume.macroCycle
   )
   volumes: MacroCycleVolume[];
 }

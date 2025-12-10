@@ -29,13 +29,13 @@ export class MicroCycle {
   @Column({ type: "int", default: 1 })
   trainingDays: number;
 
-  @OneToMany(() => MicroCycleVolume, v => v.microCycle, { onDelete: "CASCADE" })
+  @OneToMany(() => MicroCycleVolume, v => v.microCycle)
   volumes: MicroCycleVolume[];
 
   @ManyToOne(() => User, u => u.microCycles, { nullable: false, onDelete: "CASCADE" })
   @JoinColumn({ name: "userID" })
   user: User;
 
-  @OneToMany(() => MicroCycleItem, item => item.microCycle, { onDelete: "CASCADE" })
+  @OneToMany(() => MicroCycleItem, item => item.microCycle)
   cycleItems: MicroCycleItem[];
 }
