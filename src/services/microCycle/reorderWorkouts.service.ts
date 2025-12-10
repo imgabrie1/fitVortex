@@ -14,7 +14,7 @@ export const reorderWorkoutsService = async (
 
   const micro = await microRepo.findOne({
     where: { id: microCycleID },
-    relations: ["cycleItems.workout", "user", "macroItems.macroCycle"],
+    relations: ["cycleItems.workout", "user", "macroCycle"],
   });
 
   if (!micro) {
@@ -41,21 +41,21 @@ export const reorderWorkoutsService = async (
   );
   const orderedWorkoutIds = orderedIds.map((itemId) => workoutIdMap.get(itemId));
 
-  if (!micro.macroItems.length || !micro.macroItems[0].macroCycle) {
+  if (!micro.macroCycle) {
     throw new AppError("Microciclo não está associado a um macrociclo.", 400);
   }
 
-  const macroCycleId = micro.macroItems[0].macroCycle.id;
+  const macroCycleId = micro.macroCycle.id;
   const fullMacroCycle = await macroRepo.findOne({
     where: { id: macroCycleId },
-    relations: ["items.microCycle.cycleItems.workout"],
+    relations: ["microCycles.cycleItems.workout"],
   });
 
   if (!fullMacroCycle) {
     throw new AppError("Macrociclo não encontrado.", 404);
   }
 
-  const allMicroCycles = fullMacroCycle.items.map((item) => item.microCycle);
+  const allMicroCycles = fullMacroCycle.microCycles;
 
   await AppDataSource.transaction(async (transactionalEntityManager) => {
     const updatePromises: Promise<any>[] = [];

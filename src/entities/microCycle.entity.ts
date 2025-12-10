@@ -9,8 +9,8 @@ import {
 } from "typeorm";
 import { User } from "./user.entity";
 import { MicroCycleVolume } from "./microCycleVolume.entity";
-import { MacroCycleItem } from "./macroCycleItem.entity";
 import { MicroCycleItem } from "./microCycleItem.entity";
+import { MacroCycle } from "./macroCycle.entity";
 
 @Entity()
 export class MicroCycle {
@@ -19,9 +19,6 @@ export class MicroCycle {
 
   @Column({ type: "varchar" })
   microCycleName: string;
-
-  @OneToMany(() => MacroCycleItem, item => item.microCycle)
-  macroItems: MacroCycleItem[];
 
   @CreateDateColumn({ type: "date" })
   createdAt: Date | string;
@@ -35,6 +32,10 @@ export class MicroCycle {
   @ManyToOne(() => User, u => u.microCycles, { nullable: false, onDelete: "CASCADE" })
   @JoinColumn({ name: "userID" })
   user: User;
+
+  @ManyToOne(() => MacroCycle, macro => macro.microCycles, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "macroCycleId" })
+  macroCycle: MacroCycle;
 
   @OneToMany(() => MicroCycleItem, item => item.microCycle, { cascade: true })
   cycleItems: MicroCycleItem[];

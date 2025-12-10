@@ -7,7 +7,7 @@ import { MicroCycle } from "../../entities/microCycle.entity";
 import { Workout } from "../../entities/workout.entity";
 import { WorkoutExercise } from "../../entities/workoutExercise.entity";
 import { Exercise } from "../../entities/exercise.entity";
-import { MacroCycleItem } from "../../entities/macroCycleItem.entity";
+
 import { MicroCycleItem } from "../../entities/microCycleItem.entity";
 import { IMacroCycle } from "../../interfaces/macroCycle.interface";
 import { formatDateToDDMMYYYY } from "../../utils/formatDate";
@@ -86,12 +86,10 @@ export const generateNextMacroCycleService = async ({
   const referenceMacroCycle = await macroCycleRepo.findOne({
     where: { id: macroCycleId, user: { id: userId } },
     relations: {
-      items: {
-        microCycle: {
-          cycleItems: {
-            workout: {
-              workoutExercises: { exercise: true },
-            },
+      microCycles: {
+        cycleItems: {
+          workout: {
+            workoutExercises: { exercise: true },
           },
         },
       },
@@ -118,7 +116,7 @@ export const generateNextMacroCycleService = async ({
     },
   });
 
-  const referenceMicroCycle = referenceMacroCycle.items[0].microCycle;
+  const referenceMicroCycle = referenceMacroCycle.microCycles[0];
   const oldWorkoutPlan = referenceMicroCycle.cycleItems.map((ci) => ({
     name: ci.workout.name,
     exercises: ci.workout.workoutExercises.map((we) => {
@@ -492,7 +490,7 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
     newMacroCycle.macroCycleName = generateMacroCycleName(referenceMacroCycle);
 
     const microcyclesCount =
-      referenceMacroCycle.items?.length ||
+      referenceMacroCycle.microCycles?.length ||
       referenceMacroCycle.microQuantity ||
       1;
 
@@ -507,17 +505,21 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
 
     await queryRunner.manager.save(newMacroCycle);
 
+    newMacroCycle.microCycles = []; // Initialize the array
+
     for (let i = 0; i < microcyclesCount; i++) {
       const newMicroCycle = new MicroCycle();
       newMicroCycle.user = user;
+      newMicroCycle.macroCycle = newMacroCycle; // Direct link
       newMicroCycle.microCycleName = generateMicroCycleName(
-        referenceMacroCycle.items[0]?.microCycle,
+        referenceMacroCycle.microCycles[0],
         i + 1
       );
       newMicroCycle.trainingDays =
-        referenceMacroCycle.items[0]?.microCycle.trainingDays ?? [];
+        referenceMacroCycle.microCycles[0]?.trainingDays ?? [];
 
       await queryRunner.manager.save(newMicroCycle);
+      newMacroCycle.microCycles.push(newMicroCycle); // Add to the new macrocycle's microcycles
 
       let workoutPosition = 0;
       for (const workoutData of newWorkoutPlan.workouts) {
@@ -554,11 +556,6 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
 
         workoutPosition++;
       }
-
-      const macroCycleItem = new MacroCycleItem();
-      macroCycleItem.macroCycle = newMacroCycle;
-      macroCycleItem.microCycle = newMicroCycle;
-      await queryRunner.manager.save(macroCycleItem);
     }
 
     await queryRunner.commitTransaction();
@@ -566,12 +563,10 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
     const savedMacroCycle = await queryRunner.manager.findOne(MacroCycle, {
       where: { id: newMacroCycle.id },
       relations: {
-        items: {
-          microCycle: {
-            cycleItems: {
-              workout: {
-                workoutExercises: { exercise: true },
-              },
+        microCycles: {
+          cycleItems: {
+            workout: {
+              workoutExercises: { exercise: true },
             },
           },
         },
