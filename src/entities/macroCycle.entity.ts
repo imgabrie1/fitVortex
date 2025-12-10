@@ -3,21 +3,17 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  OneToMany
+  OneToMany,
+  JoinColumn,
 } from "typeorm";
 import { User } from "./user.entity";
-import { MacroCycleItem } from "./macroCycleItem.entity";
 import { MacroCycleVolume } from "./macroCycleVolume.entity";
+import { MicroCycle } from "./microCycle.entity";
 
 @Entity()
 export class MacroCycle {
   @PrimaryGeneratedColumn("uuid")
   id: string;
-
-  @ManyToOne(() => User, (user: User) => user.macroCycles, {
-    onDelete: "CASCADE",
-  })
-  user: User;
 
   @Column({ type: "varchar", length: 50 })
   macroCycleName: string;
@@ -31,15 +27,15 @@ export class MacroCycle {
   @Column({ type: "int" })
   microQuantity: number;
 
-  @OneToMany(() => MacroCycleItem, (item: MacroCycleItem) => item.macroCycle, {
+  @ManyToOne(() => User, (user) => user.macroCycles, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "userId" })
+  user: User;
+
+  @OneToMany(() => MicroCycle, (microCycle) => microCycle.macroCycle, { cascade: true })
+  microCycles: MicroCycle[];
+
+  @OneToMany(() => MacroCycleVolume, (volume) => volume.macroCycle, {
     cascade: true,
   })
-  items: MacroCycleItem[];
-
-  @OneToMany(
-    () => MacroCycleVolume,
-    (volume: MacroCycleVolume) => volume.macroCycle,
-    { cascade: true }
-  )
   volumes: MacroCycleVolume[];
 }

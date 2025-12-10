@@ -18,21 +18,19 @@ export class Workout {
   @Column({ type: "varchar", length: 50 })
   name: string;
 
-  @OneToMany(() => MicroCycleItem, (item: MicroCycleItem) => item.workout, {
-    cascade: true,
-  })
+  @OneToMany(() => MicroCycleItem, (item: MicroCycleItem) => item.workout)
   cycleItems: MicroCycleItem[];
 
   @OneToMany(
     () => WorkoutExercise,
     (workoutExercise: WorkoutExercise) => workoutExercise.workout,
-    { cascade: true, eager: true }
+    { eager: true, cascade: true }
   )
   workoutExercises: WorkoutExercise[];
 
   @OneToOne(() => WorkoutVolume, (volume: WorkoutVolume) => volume.workout, {
-    cascade: true,
     eager: true,
+    onDelete: "CASCADE",
   })
   @JoinColumn()
   volume: WorkoutVolume;

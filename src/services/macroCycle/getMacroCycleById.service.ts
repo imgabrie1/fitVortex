@@ -12,8 +12,7 @@ export const getMacroCycleByIDService = async (
     .createQueryBuilder("macroCycle")
     .leftJoinAndSelect("macroCycle.user", "user")
     .leftJoinAndSelect("macroCycle.volumes", "volumes")
-    .leftJoinAndSelect("macroCycle.items", "items")
-    .leftJoinAndSelect("items.microCycle", "microCycle")
+    .leftJoinAndSelect("macroCycle.microCycles", "microCycle")
     .leftJoinAndSelect("microCycle.cycleItems", "cycleItems")
     .leftJoinAndSelect("cycleItems.workout", "workout")
     .leftJoinAndSelect("cycleItems.sets", "sets")
@@ -21,7 +20,7 @@ export const getMacroCycleByIDService = async (
     .leftJoinAndSelect("workout.workoutExercises", "workoutExercises")
     .leftJoinAndSelect("workoutExercises.exercise", "workoutExercise")
     .where("macroCycle.id = :macroCycleID", { macroCycleID })
-    .orderBy("items.createdAt", "ASC")
+    .orderBy("microCycle.createdAt", "ASC")
     .getOne();
 
   if (!macroCycle) {

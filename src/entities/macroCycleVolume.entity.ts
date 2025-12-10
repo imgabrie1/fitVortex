@@ -7,7 +7,9 @@ export class MacroCycleVolume {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => MacroCycle, (cycle) => cycle.volumes)
+  @ManyToOne(() => MacroCycle, (cycle) => cycle.volumes, {
+    onDelete: "CASCADE",
+  })
   macroCycle: MacroCycle;
 
   @Column({ type: "enum", enum: MuscleGroup })
