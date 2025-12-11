@@ -15,20 +15,17 @@ import { Side } from "../../enum/side.enum";
 import { WorkoutExercise } from "../../entities/workoutExercise.entity";
 import { MicroCycle } from "../../entities/microCycle.entity";
 
-
 export const skipWorkoutService = async (
   microCycleID: string,
   workoutID: string,
   secondaryMuscleMultiplier: number = 0.5
 ): Promise<MicroCycleItem> => {
   const microCycleItemRepo = AppDataSource.getRepository(MicroCycleItem);
-  const exerciseRepo = AppDataSource.getRepository(Exercise);
   const setRepo = AppDataSource.getRepository(Set);
   const volumeRepo = AppDataSource.getRepository(WorkoutVolume);
   const volumeEntryRepo = AppDataSource.getRepository(WorkoutVolumeEntry);
   const workoutRepo = AppDataSource.getRepository(Workout);
   const microCycleVolumeRepo = AppDataSource.getRepository(MicroCycleVolume);
-  const workoutExerciseRepo = AppDataSource.getRepository(WorkoutExercise);
 
   const microCycleItem = await microCycleItemRepo.findOne({
     where: {
@@ -41,6 +38,9 @@ export const skipWorkoutService = async (
   if (!microCycleItem) {
     throw new AppError("Itens do micro ciclo não encontrados", 404);
   }
+
+  microCycleItem.isSkipped = true;
+  await microCycleItemRepo.save(microCycleItem);
 
   const workout = await workoutRepo.findOne({
     where: { id: workoutID },
