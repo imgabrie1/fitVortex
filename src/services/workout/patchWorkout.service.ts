@@ -36,6 +36,7 @@ const patchWorkoutService = async (
       exerciseId: string;
       targetSets: number;
       is_unilateral?: boolean;
+      notes?: string;
     }[];
 
     const currentMaxPosition =
@@ -46,12 +47,11 @@ const patchWorkoutService = async (
     let nextPosition = currentMaxPosition + 1;
 
     for (const incoming of exercisesPayload) {
-      const { exerciseId, targetSets } = incoming;
+      const { exerciseId, targetSets, is_unilateral, notes } = incoming;
 
-      const alreadyExists = workout.workoutExercises.some(
+      const existingWorkoutExercise = workout.workoutExercises.find(
         (we) => String(we.exercise.id) === String(exerciseId)
       );
-      if (alreadyExists) continue;
 
       const exercise = await exerciseRepo.findOneBy({ id: exerciseId });
       if (!exercise) {
@@ -61,18 +61,28 @@ const patchWorkoutService = async (
         );
       }
 
-      const finalIsUnilateral =
-        incoming.is_unilateral ?? exercise.default_unilateral ?? false;
+      if (existingWorkoutExercise) {
+        existingWorkoutExercise.targetSets = targetSets;
+        existingWorkoutExercise.is_unilateral =
+          is_unilateral ?? exercise.default_unilateral ?? false;
 
-      const newWorkoutExercise = workoutExerciseRepo.create({
-        targetSets,
-        is_unilateral: finalIsUnilateral,
-        position: nextPosition++,
-        workout,
-        exercise,
-      });
+        if (notes !== undefined) {
+          existingWorkoutExercise.notes = notes;
+        }
 
-      await workoutExerciseRepo.save(newWorkoutExercise);
+        await workoutExerciseRepo.save(existingWorkoutExercise);
+      } else {
+        const newWorkoutExercise = workoutExerciseRepo.create({
+          targetSets,
+          is_unilateral: is_unilateral ?? exercise.default_unilateral ?? false,
+          position: nextPosition++,
+          workout,
+          exercise,
+          notes: notes ?? null,
+        });
+
+        await workoutExerciseRepo.save(newWorkoutExercise);
+      }
     }
   }
 
