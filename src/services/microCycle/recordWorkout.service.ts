@@ -13,6 +13,7 @@ import {
 import { Workout } from "../../entities/workout.entity";
 import { MicroCycleVolume } from "../../entities/microCycleVolume.entity";
 import { Side } from "../../enum/side.enum";
+import { WorkoutExercise } from "../../entities/workoutExercise.entity";
 
 export const recordWorkoutService = async (
   microCycleID: string,
@@ -27,6 +28,7 @@ export const recordWorkoutService = async (
   const volumeEntryRepo = AppDataSource.getRepository(WorkoutVolumeEntry);
   const workoutRepo = AppDataSource.getRepository(Workout);
   const microCycleVolumeRepo = AppDataSource.getRepository(MicroCycleVolume);
+  const workoutExerciseRepo = AppDataSource.getRepository(WorkoutExercise);
 
   const microCycleItem = await microCycleItemRepo.findOne({
     where: {
@@ -78,6 +80,20 @@ export const recordWorkoutService = async (
           exercise,
         });
       });
+
+      if (exerciseData.notes !== undefined && exerciseData.notes !== null) {
+        const workoutExercise = await workoutExerciseRepo.findOne({
+          where: {
+            workout: { id: workoutID },
+            exercise: { id: exerciseData.exerciseID },
+          },
+        });
+
+        if (workoutExercise) {
+          workoutExercise.notes = exerciseData.notes;
+          await workoutExerciseRepo.save(workoutExercise);
+        }
+      }
 
       await setRepo.save(setsToCreate);
 
