@@ -28,6 +28,9 @@ export class WorkoutExercise {
   @Column({ type: "boolean", default: false })
   is_unilateral: boolean;
 
+  @Column({ type: "varchar", length: 255, nullable: true })
+  notes: string | null;
+
   @Column({ type: "int" })
   position: number;
 }
