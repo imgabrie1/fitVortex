@@ -14,9 +14,6 @@ export class Set {
   @Column({ type: "decimal", precision: 5, scale: 2 })
   weight: number;
 
-  @Column({ type: "varchar", length: 255, nullable: true })
-  notes: string | null;
-
   @Column({ type: "enum", enum: Side, default: Side.BOTH })
   side: Side;
 
