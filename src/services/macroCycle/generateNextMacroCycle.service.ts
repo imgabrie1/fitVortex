@@ -505,12 +505,12 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
 
     await queryRunner.manager.save(newMacroCycle);
 
-    newMacroCycle.microCycles = []; // Initialize the array
+    newMacroCycle.microCycles = [];
 
     for (let i = 0; i < microcyclesCount; i++) {
       const newMicroCycle = new MicroCycle();
       newMicroCycle.user = user;
-      newMicroCycle.macroCycle = newMacroCycle; // Direct link
+      newMicroCycle.macroCycle = newMacroCycle;
       newMicroCycle.microCycleName = generateMicroCycleName(
         referenceMacroCycle.microCycles[0],
         i + 1
@@ -519,7 +519,7 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
         referenceMacroCycle.microCycles[0]?.trainingDays ?? [];
 
       await queryRunner.manager.save(newMicroCycle);
-      newMacroCycle.microCycles.push(newMicroCycle); // Add to the new macrocycle's microcycles
+      newMacroCycle.microCycles.push(newMicroCycle);
 
       let workoutPosition = 0;
       for (const workoutData of newWorkoutPlan.workouts) {

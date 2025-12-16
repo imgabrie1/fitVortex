@@ -154,7 +154,6 @@ export const editRecordedWorkoutService = async (
         return setRepo.create({
           reps: setData.reps,
           weight: setData.weight,
-          notes: setData.notes || null,
           side: setData.side || Side.BOTH,
           microCycleItem,
           exercise,
