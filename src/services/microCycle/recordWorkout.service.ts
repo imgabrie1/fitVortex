@@ -53,8 +53,7 @@ export const recordWorkoutService = async (
     volumeByMuscleGroup[muscle] = (volumeByMuscleGroup[muscle] || 0) + volume;
     const parents = getMuscleGroupParents(muscle);
     for (const parent of parents) {
-      volumeByMuscleGroup[parent] =
-        (volumeByMuscleGroup[parent] || 0) + volume;
+      volumeByMuscleGroup[parent] = (volumeByMuscleGroup[parent] || 0) + volume;
     }
   };
 
@@ -74,7 +73,6 @@ export const recordWorkoutService = async (
         return setRepo.create({
           reps: setData.reps,
           weight: setData.weight,
-          notes: setData.notes || null,
           side: setData.side || Side.BOTH,
           microCycleItem,
           exercise,
@@ -131,12 +129,15 @@ export const recordWorkoutService = async (
   }
 
   const microCycleItemWithMicroCycle = await microCycleItemRepo.findOne({
-      where: { id: microCycleItem.id },
-      relations: ["microCycle"]
+    where: { id: microCycleItem.id },
+    relations: ["microCycle"],
   });
 
   if (!microCycleItemWithMicroCycle) {
-      throw new AppError("Item do microciclo não encontrado após o registro do treino.", 500);
+    throw new AppError(
+      "Item do microciclo não encontrado após o registro do treino.",
+      500
+    );
   }
 
   for (const muscleGroupStr in volumeByMuscleGroup) {
@@ -144,20 +145,21 @@ export const recordWorkoutService = async (
     const calculatedVolume = volumeByMuscleGroup[muscleGroup]!;
 
     let microCycleVolume = await microCycleVolumeRepo.findOne({
-        where: {
-            microCycle: { id: microCycleItemWithMicroCycle.microCycle.id },
-            muscleGroup: muscleGroup
-        }
+      where: {
+        microCycle: { id: microCycleItemWithMicroCycle.microCycle.id },
+        muscleGroup: muscleGroup,
+      },
     });
 
     if (microCycleVolume) {
-        microCycleVolume.totalVolume = Number(microCycleVolume.totalVolume) + calculatedVolume;
+      microCycleVolume.totalVolume =
+        Number(microCycleVolume.totalVolume) + calculatedVolume;
     } else {
-        microCycleVolume = microCycleVolumeRepo.create({
-            microCycle: microCycleItemWithMicroCycle.microCycle,
-            muscleGroup: muscleGroup,
-            totalVolume: calculatedVolume
-        });
+      microCycleVolume = microCycleVolumeRepo.create({
+        microCycle: microCycleItemWithMicroCycle.microCycle,
+        muscleGroup: muscleGroup,
+        totalVolume: calculatedVolume,
+      });
     }
     await microCycleVolumeRepo.save(microCycleVolume);
   }
@@ -173,7 +175,12 @@ export const recordWorkoutService = async (
 
   const finalWorkout = await workoutRepo.findOne({
     where: { id: workoutID },
-    relations: ["workoutExercises", "workoutExercises.exercise", "volume", "volume.entries"],
+    relations: [
+      "workoutExercises",
+      "workoutExercises.exercise",
+      "volume",
+      "volume.entries",
+    ],
   });
 
   finalMicroCycleItem.workout = finalWorkout!;

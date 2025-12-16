@@ -1,6 +1,6 @@
 import { AppDataSource } from "../../data-source";
 import { MacroCycle } from "../../entities/macroCycle.entity";
-import { MicroCycle } from "../../entities/microCycle.entity"; // Added this line
+import { MicroCycle } from "../../entities/microCycle.entity";
 import { AppError } from "../../errors";
 import {
   MuscleGroup,
@@ -77,7 +77,7 @@ export const adjustVolumeService = async (
   const volumesByMuscleGroup: { [key: string]: number[] } = {};
 
   for (const item of sortedItems) {
-    for (const volume of item.volumes) { // Changed here
+    for (const volume of item.volumes) {
       const mg = volume.muscleGroup as MuscleGroup;
       if (!volumesByMuscleGroup[mg]) volumesByMuscleGroup[mg] = [];
       volumesByMuscleGroup[mg].push(volume.totalVolume);
@@ -90,7 +90,7 @@ export const adjustVolumeService = async (
     }
   }
 
-  const referenceMicroCycle = sortedItems[0]; // Changed here
+  const referenceMicroCycle = sortedItems[0];
   const totalSetsByMuscleGroup: { [key: string]: number } = {};
 
   const addSetsToHierarchy = (muscle: MuscleGroup, sets: number) => {
@@ -111,6 +111,7 @@ export const adjustVolumeService = async (
           const primaryMuscle = workoutExercise.exercise.primaryMuscle;
           const secondaryMuscles = workoutExercise.exercise.secondaryMuscle;
           const sets = workoutExercise.targetSets;
+          const notes = workoutExercise.notes;
 
           if (primaryMuscle) {
             addSetsToHierarchy(primaryMuscle, sets);
