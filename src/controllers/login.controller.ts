@@ -11,17 +11,20 @@ const createLoginController = async (
 ): Promise<Response> => {
   const userRepo = AppDataSource.getRepository(User);
   const loginData: iLogin = req.body;
+
   const user = await userRepo.findOne({
     where: { email: loginData.email },
   });
 
-  const token = await createLoginService(loginData);
+  const { token, refreshToken } = await createLoginService(loginData);
 
   if (user) {
     const { password, ...userWithoutPassword } = user;
+
     return res.json({
       user: userWithoutPassword,
       token: token,
+      refreshToken: refreshToken,
     });
   } else {
     throw new AppError("Usuário não encontrado", 404);
