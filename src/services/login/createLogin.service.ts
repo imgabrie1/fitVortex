@@ -5,7 +5,9 @@ import { User } from "../../entities/user.entity";
 import { AppError } from "../../errors";
 import { iLogin } from "../../interfaces/login.interface";
 
-const createLoginService = async (loginData: iLogin): Promise<{ token: string; refreshToken: string }> => {
+const createLoginService = async (
+  loginData: iLogin
+): Promise<{ token: string; refreshToken: string }> => {
   const repoUser = AppDataSource.getRepository(User);
 
   const user = await repoUser.findOneBy({
@@ -34,12 +36,12 @@ const createLoginService = async (loginData: iLogin): Promise<{ token: string; r
 
   const refreshToken = jwt.sign(
     {
-        admin: user.admin 
-    }, 
-    process.env.SECRET_KEY!, 
+      admin: user.admin,
+    },
+    process.env.SECRET_KEY!,
     {
-        expiresIn: "7d",
-        subject: String(user.id),
+      expiresIn: "7d",
+      subject: String(user.id),
     }
   );
 
