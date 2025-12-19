@@ -27,6 +27,9 @@ export class User {
   @Column({ type: "varchar", length: 125 })
   password: string;
 
+  @Column({ type: "varchar", nullable: true })
+  refreshToken: string;
+
   @Column({ default: false })
   admin: boolean;
 
