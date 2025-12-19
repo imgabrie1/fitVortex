@@ -4,12 +4,11 @@ import { AppDataSource } from "../../data-source";
 import { User } from "../../entities/user.entity";
 import { AppError } from "../../errors";
 import { iLogin } from "../../interfaces/login.interface";
-import { iRepoUser } from "../../interfaces/user.interface";
 
-const createLoginService = async (loginData: iLogin): Promise<string> => {
-  const repoUser: iRepoUser = AppDataSource.getRepository(User);
+const createLoginService = async (loginData: iLogin): Promise<{ token: string; refreshToken: string }> => {
+  const repoUser = AppDataSource.getRepository(User);
 
-  const user: User | null = await repoUser.findOneBy({
+  const user = await repoUser.findOneBy({
     email: loginData.email,
   });
 
@@ -19,21 +18,34 @@ const createLoginService = async (loginData: iLogin): Promise<string> => {
 
   const passwordMatch = await compare(loginData.password, user.password);
   if (!passwordMatch) {
-    throw new AppError("As senhas não coincidem. Insira-os novamente", 401);
+    throw new AppError("Credenciais inválidas", 401);
   }
 
-  const token: string = jwt.sign(
+  const token = jwt.sign(
     {
       admin: user.admin,
     },
     process.env.SECRET_KEY!,
     {
-      expiresIn: "24h",
+      expiresIn: "15m",
       subject: String(user.id),
     }
   );
 
-  return token;
+  const refreshToken = jwt.sign(
+    {
+        admin: user.admin 
+    }, 
+    process.env.SECRET_KEY!, 
+    {
+        expiresIn: "7d",
+        subject: String(user.id),
+    }
+  );
+
+  await repoUser.update(user.id, { refreshToken: refreshToken });
+
+  return { token, refreshToken };
 };
 
 export default createLoginService;
