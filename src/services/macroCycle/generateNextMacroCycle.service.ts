@@ -23,10 +23,13 @@ const generateMacroCycleName = (ref?: any) =>
     ? `${ref.macroCycleName} — próximo`
     : `Macrocycle ${new Date().toISOString().split("T")[0]}`;
 
-const generateMicroCycleName = (refMicro?: any, idx = 1) =>
-  refMicro?.microCycleName
-    ? `${refMicro.microCycleName} — copy ${idx}`
-    : `Microcycle ${new Date().toISOString().split("T")[0]} #${idx}`;
+const generateMicroCycleName = (refMicro?: any, idx = 1) => {
+  if (refMicro?.microCycleName) {
+    const baseName = refMicro.microCycleName.replace(/\s+\d+$/, "").trim();
+    return `${baseName} ${idx}`;
+  }
+  return `Microcycle ${new Date().toISOString().split("T")[0]} #${idx}`;
+};
 
 interface IGenerateNextMacroCycle {
   macroCycleId: string;
@@ -52,7 +55,8 @@ if (!apiKey) {
   throw new AppError("GEMINI_API_KEY env não existe");
 }
 const genai = new GoogleGenAI({ apiKey });
-const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+const DEFAULT_MODEL =
+  process.env.GEMINI_MODEL || "gemini-3-flash-preview";
 
 function validateWorkoutPlan(obj: any): obj is IWorkoutPlan {
   if (!obj || typeof obj !== "object") return false;
@@ -94,6 +98,18 @@ export const generateNextMacroCycleService = async ({
         },
       },
     },
+    order: {
+      microCycles: {
+        cycleItems: {
+          position: "ASC",
+          workout: {
+            workoutExercises: {
+              position: "ASC",
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!referenceMacroCycle)
@@ -120,7 +136,7 @@ export const generateNextMacroCycleService = async ({
   const oldWorkoutPlan = referenceMicroCycle.cycleItems.map((ci) => ({
     name: ci.workout.name,
     exercises: ci.workout.workoutExercises.map((we) => {
-      const isUnilateral = we.exercise.default_unilateral;
+      const isUnilateral = we.is_unilateral;
       const effectiveSets = isUnilateral ? we.targetSets / 2 : we.targetSets;
 
       return {
@@ -152,7 +168,26 @@ export const generateNextMacroCycleService = async ({
     })
   );
 
+  const unilateralLookup = new Map<string, boolean>();
+  oldWorkoutPlan.forEach((workout) => {
+    workout.exercises.forEach((exercise) => {
+      if (!unilateralLookup.has(exercise.exerciseName)) {
+        unilateralLookup.set(exercise.exerciseName, exercise.isUnilateral);
+      }
+    });
+  });
+
   let newWorkoutPlan: IWorkoutPlan;
+  let finalPlan: {
+    workouts: {
+      name: string;
+      exercises: {
+        exerciseName: string;
+        targetSets: number;
+        isUnilateral: boolean;
+      }[];
+    }[];
+  };
 
   if (createNewWorkout) {
     const aiPrompt = `Você é um especialista em periodização de treinos. Sua tarefa é criar um plano de treino otimizado baseado na análise de performance e objetivos do usuário.
@@ -199,12 +234,12 @@ PERNAS (dia único):
     }
 
 REGRA DOS EXERCÍCIOS UNILATERAIS:
-• Exercícios com 'default_unilateral: true' devem ter suas séries consideradas como METADE no cálculo de volume
+• A propriedade 'isUnilateral' (no plano de treino anterior) ou 'default_unilateral' (na lista de exercícios) indica se um exercício é unilateral. Se for 'true', suas séries contam como METADE para o volume total.
 • Exemplo: 4 séries de agachamento unilateral = 2 séries efetivas no cálculo
 
 LIMITES:
 • Máximo ${maxSetsPerMicroCycle} séries totais por microciclo para qualquer grupo muscular
-• Mínimo 1 série por exercício
+• Mínimo 2 séries por exercício. Se para atingir o volume alvo for necessário usar 1 série, prefira redistribuir essa série em outros exercícios do mesmo grupo muscular.
 
 --- INSTRUÇÕES DE RESPOSTA ---
 
@@ -239,14 +274,19 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
         contents: [{ role: "user", parts: [{ text: aiPrompt }] }],
         config: {
           responseMimeType: "application/json",
-          maxOutputTokens: 1200,
+          maxOutputTokens: 4000,
           temperature: 0.3,
         },
       });
-      aiRawText =
-        resp?.candidates?.[0]?.content?.[0]?.parts?.[0]?.text ??
-        resp?.text ??
-        null;
+
+      if (resp.candidates && resp.candidates[0].content.parts) {
+        aiRawText = resp.candidates[0].content.parts
+          .filter((part: any) => "text" in part)
+          .map((part: any) => part.text)
+          .join("");
+      } else {
+        aiRawText = resp.text;
+      }
     } catch (err: any) {
       console.error(
         "Erro no Gemini SDK:",
@@ -282,6 +322,33 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
       console.error("IA retornou um plano de treino inválido:", newWorkoutPlan);
       throw new AppError("IA retornou um plano de treino inválido", 502);
     }
+
+    finalPlan = {
+      workouts: newWorkoutPlan.workouts.map((workout) => ({
+        name: workout.name,
+        exercises: workout.exercises.map((exercise) => {
+          const dbExercise = dbExercises.find(
+            (e) => e.name === exercise.exerciseName
+          );
+          const isUnilateral =
+            unilateralLookup.get(exercise.exerciseName) ??
+            dbExercise?.default_unilateral ??
+            false;
+          return {
+            ...exercise,
+            isUnilateral,
+          };
+        }),
+      })),
+    };
+
+    finalPlan.workouts.forEach((w) => {
+      w.exercises.forEach((e) => {
+        if (e.targetSets < 2) {
+          e.targetSets = 2;
+        }
+      });
+    });
   } else {
     const volumeLedger: { [key in MuscleGroup]?: number } = {};
     volumeAnalysis.forEach((v) => {
@@ -289,47 +356,6 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
     });
 
     const mutableWorkoutPlan = JSON.parse(JSON.stringify(oldWorkoutPlan));
-
-    const originalTotals: { [key: string]: number } = {};
-    Object.values(MuscleGroup).forEach((m) => (originalTotals[m] = 0));
-
-    oldWorkoutPlan.forEach((w) => {
-      w.exercises.forEach((e) => {
-        const primary = e.primaryMuscle as MuscleGroup;
-        const secondaries = (e.secondaryMuscle || []) as MuscleGroup[];
-        originalTotals[primary] += e.effectiveSets;
-        getMuscleGroupParents(primary).forEach(
-          (p) => (originalTotals[p] += e.effectiveSets)
-        );
-        secondaries.forEach((s) => {
-          originalTotals[s] += e.effectiveSets * 0.5;
-          getMuscleGroupParents(s).forEach(
-            (p) => (originalTotals[p] += e.effectiveSets * 0.5)
-          );
-        });
-      });
-    });
-
-    for (const workout of mutableWorkoutPlan) {
-      for (const exercise of workout.exercises) {
-        const primaryMuscle = exercise.primaryMuscle as MuscleGroup;
-        const relevantLedgerMuscle = [
-          primaryMuscle,
-          ...getMuscleGroupParents(primaryMuscle),
-        ].find((m) => volumeLedger[m] !== undefined);
-
-        if (relevantLedgerMuscle && originalTotals[relevantLedgerMuscle] > 0) {
-          const oldProportion =
-            exercise.effectiveSets / originalTotals[relevantLedgerMuscle];
-          const newTargetSets =
-            (volumeLedger[relevantLedgerMuscle] ?? 0) * oldProportion;
-
-          exercise.targetSets = exercise.isUnilateral
-            ? Math.max(2, Math.round(newTargetSets * 2))
-            : Math.max(1, Math.round(newTargetSets));
-        }
-      }
-    }
 
     const postAiSetsCount: { [key: string]: number } = {};
     Object.values(MuscleGroup).forEach((m) => (postAiSetsCount[m] = 0));
@@ -391,13 +417,13 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
       if (!exercisesForGroup.length) continue;
 
       let cycle = 0;
-      while (Math.abs(diff) > 0.25 && cycle < 50) {
+      while (Math.abs(diff) > 0.25 && cycle < 100) {
         const exItem = exercisesForGroup[cycle % exercisesForGroup.length];
         const ex = exItem.exercise;
         const changeSign = Math.sign(diff);
         const setsChange = ex.isUnilateral ? 2 * changeSign : 1 * changeSign;
 
-        if (ex.targetSets + setsChange < (ex.isUnilateral ? 2 : 1)) {
+        if (ex.targetSets + setsChange < 2) {
           cycle++;
           continue;
         }
@@ -417,12 +443,13 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
       }
     }
 
-    newWorkoutPlan = {
+    finalPlan = {
       workouts: mutableWorkoutPlan.map((w: any) => ({
         name: w.name,
         exercises: w.exercises.map((e: any) => ({
           exerciseName: e.exerciseName,
           targetSets: e.targetSets,
+          isUnilateral: e.isUnilateral,
         })),
       })),
     };
@@ -446,13 +473,13 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
     }
   };
 
-  for (const workout of newWorkoutPlan.workouts) {
+  for (const workout of finalPlan.workouts) {
     for (const exercise of workout.exercises) {
       const dbExercise = dbExercises.find(
         (e) => e.name === exercise.exerciseName
       );
       if (dbExercise) {
-        const isUnilateral = dbExercise.default_unilateral;
+        const isUnilateral = exercise.isUnilateral;
         if (dbExercise.primaryMuscle) {
           addSetsToHierarchy(
             dbExercise.primaryMuscle,
@@ -477,7 +504,18 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
   volumeAnalysis.forEach((v) => {
     const aiSets = aiGeneratedSets[v.muscleGroup] || 0;
     const suggestedSets = v.newSuggestedTotalSets;
-    const diff = aiSets - suggestedSets;
+    const originalSets = v.totalSets;
+    const diffSugerido = aiSets - suggestedSets;
+    const diffOriginal = aiSets - originalSets;
+    console.log(
+      `- ${
+        v.muscleGroup
+      }: Antes ${originalSets.toFixed(2)}, Sugerido ${suggestedSets.toFixed(
+        2
+      )}, AI Gerou ${aiSets.toFixed(2)} (Diferença Sugerido: ${diffSugerido.toFixed(
+        2
+      )}, Diferença Original: ${diffOriginal.toFixed(2)})`
+    );
   });
 
   const queryRunner = AppDataSource.createQueryRunner();
@@ -522,7 +560,7 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
       newMacroCycle.microCycles.push(newMicroCycle);
 
       let workoutPosition = 0;
-      for (const workoutData of newWorkoutPlan.workouts) {
+      for (const workoutData of finalPlan.workouts) {
         const newWorkout = new Workout();
         newWorkout.name = workoutData.name;
         await queryRunner.manager.save(newWorkout);
@@ -543,6 +581,7 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
           newWorkoutExercise.exercise = exercise;
           newWorkoutExercise.targetSets = exerciseData.targetSets;
           newWorkoutExercise.position = workoutExercisePosition;
+          newWorkoutExercise.is_unilateral = exerciseData.isUnilateral;
           await queryRunner.manager.save(newWorkoutExercise);
 
           workoutExercisePosition++;
