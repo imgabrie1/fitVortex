@@ -25,7 +25,6 @@ const generateMacroCycleName = (ref?: any) =>
 
 const generateMicroCycleName = (refMicro?: any, idx = 1) => {
   if (refMicro?.microCycleName) {
-    // Remove números no final para permitir re-indexação (ex: "Semana 1" vira "Semana")
     const baseName = refMicro.microCycleName.replace(/\s+\d+$/, "").trim();
     return `${baseName} ${idx}`;
   }
@@ -136,7 +135,7 @@ export const generateNextMacroCycleService = async ({
   const oldWorkoutPlan = referenceMicroCycle.cycleItems.map((ci) => ({
     name: ci.workout.name,
     exercises: ci.workout.workoutExercises.map((we) => {
-      const isUnilateral = we.exercise.default_unilateral;
+      const isUnilateral = we.is_unilateral;
       const effectiveSets = isUnilateral ? we.targetSets / 2 : we.targetSets;
 
       return {
@@ -215,7 +214,7 @@ PERNAS (dia único):
     }
 
 REGRA DOS EXERCÍCIOS UNILATERAIS:
-• Exercícios com 'default_unilateral: true' devem ter suas séries consideradas como METADE no cálculo de volume
+• A propriedade 'isUnilateral' (no plano de treino anterior) ou 'default_unilateral' (na lista de exercícios) indica se um exercício é unilateral. Se for 'true', suas séries contam como METADE para o volume total.
 • Exemplo: 4 séries de agachamento unilateral = 2 séries efetivas no cálculo
 
 LIMITES:
@@ -559,6 +558,7 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
           newWorkoutExercise.exercise = exercise;
           newWorkoutExercise.targetSets = exerciseData.targetSets;
           newWorkoutExercise.position = workoutExercisePosition;
+          newWorkoutExercise.is_unilateral = exercise.default_unilateral;
           await queryRunner.manager.save(newWorkoutExercise);
 
           workoutExercisePosition++;
