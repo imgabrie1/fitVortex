@@ -167,7 +167,26 @@ export const generateNextMacroCycleService = async ({
     })
   );
 
+  const unilateralLookup = new Map<string, boolean>();
+  oldWorkoutPlan.forEach((workout) => {
+    workout.exercises.forEach((exercise) => {
+      if (!unilateralLookup.has(exercise.exerciseName)) {
+        unilateralLookup.set(exercise.exerciseName, exercise.isUnilateral);
+      }
+    });
+  });
+
   let newWorkoutPlan: IWorkoutPlan;
+  let finalPlan: {
+    workouts: {
+      name: string;
+      exercises: {
+        exerciseName: string;
+        targetSets: number;
+        isUnilateral: boolean;
+      }[];
+    }[];
+  };
 
   if (createNewWorkout) {
     const aiPrompt = `Você é um especialista em periodização de treinos. Sua tarefa é criar um plano de treino otimizado baseado na análise de performance e objetivos do usuário.
@@ -297,6 +316,25 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
       console.error("IA retornou um plano de treino inválido:", newWorkoutPlan);
       throw new AppError("IA retornou um plano de treino inválido", 502);
     }
+
+    finalPlan = {
+      workouts: newWorkoutPlan.workouts.map((workout) => ({
+        name: workout.name,
+        exercises: workout.exercises.map((exercise) => {
+          const dbExercise = dbExercises.find(
+            (e) => e.name === exercise.exerciseName
+          );
+          const isUnilateral =
+            unilateralLookup.get(exercise.exerciseName) ??
+            dbExercise?.default_unilateral ??
+            false;
+          return {
+            ...exercise,
+            isUnilateral,
+          };
+        }),
+      })),
+    };
   } else {
     const volumeLedger: { [key in MuscleGroup]?: number } = {};
     volumeAnalysis.forEach((v) => {
@@ -432,12 +470,13 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
       }
     }
 
-    newWorkoutPlan = {
+    finalPlan = {
       workouts: mutableWorkoutPlan.map((w: any) => ({
         name: w.name,
         exercises: w.exercises.map((e: any) => ({
           exerciseName: e.exerciseName,
           targetSets: e.targetSets,
+          isUnilateral: e.isUnilateral,
         })),
       })),
     };
@@ -461,13 +500,13 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
     }
   };
 
-  for (const workout of newWorkoutPlan.workouts) {
+  for (const workout of finalPlan.workouts) {
     for (const exercise of workout.exercises) {
       const dbExercise = dbExercises.find(
         (e) => e.name === exercise.exerciseName
       );
       if (dbExercise) {
-        const isUnilateral = dbExercise.default_unilateral;
+        const isUnilateral = exercise.isUnilateral;
         if (dbExercise.primaryMuscle) {
           addSetsToHierarchy(
             dbExercise.primaryMuscle,
@@ -537,7 +576,7 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
       newMacroCycle.microCycles.push(newMicroCycle);
 
       let workoutPosition = 0;
-      for (const workoutData of newWorkoutPlan.workouts) {
+      for (const workoutData of finalPlan.workouts) {
         const newWorkout = new Workout();
         newWorkout.name = workoutData.name;
         await queryRunner.manager.save(newWorkout);
@@ -558,7 +597,7 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
           newWorkoutExercise.exercise = exercise;
           newWorkoutExercise.targetSets = exerciseData.targetSets;
           newWorkoutExercise.position = workoutExercisePosition;
-          newWorkoutExercise.is_unilateral = exercise.default_unilateral;
+          newWorkoutExercise.is_unilateral = exerciseData.isUnilateral;
           await queryRunner.manager.save(newWorkoutExercise);
 
           workoutExercisePosition++;
