@@ -238,7 +238,7 @@ REGRA DOS EXERCÍCIOS UNILATERAIS:
 
 LIMITES:
 • Máximo ${maxSetsPerMicroCycle} séries totais por microciclo para qualquer grupo muscular
-• Mínimo 1 série por exercício
+• Mínimo 2 séries por exercício. Se para atingir o volume alvo for necessário usar 1 série, prefira redistribuir essa série em outros exercícios do mesmo grupo muscular.
 
 --- INSTRUÇÕES DE RESPOSTA ---
 
@@ -335,6 +335,14 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
         }),
       })),
     };
+
+    finalPlan.workouts.forEach((w) => {
+      w.exercises.forEach((e) => {
+        if (e.targetSets < 2) {
+          e.targetSets = 2;
+        }
+      });
+    });
   } else {
     const volumeLedger: { [key in MuscleGroup]?: number } = {};
     volumeAnalysis.forEach((v) => {
@@ -342,47 +350,6 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
     });
 
     const mutableWorkoutPlan = JSON.parse(JSON.stringify(oldWorkoutPlan));
-
-    const originalTotals: { [key: string]: number } = {};
-    Object.values(MuscleGroup).forEach((m) => (originalTotals[m] = 0));
-
-    oldWorkoutPlan.forEach((w) => {
-      w.exercises.forEach((e) => {
-        const primary = e.primaryMuscle as MuscleGroup;
-        const secondaries = (e.secondaryMuscle || []) as MuscleGroup[];
-        originalTotals[primary] += e.effectiveSets;
-        getMuscleGroupParents(primary).forEach(
-          (p) => (originalTotals[p] += e.effectiveSets)
-        );
-        secondaries.forEach((s) => {
-          originalTotals[s] += e.effectiveSets * 0.5;
-          getMuscleGroupParents(s).forEach(
-            (p) => (originalTotals[p] += e.effectiveSets * 0.5)
-          );
-        });
-      });
-    });
-
-    for (const workout of mutableWorkoutPlan) {
-      for (const exercise of workout.exercises) {
-        const primaryMuscle = exercise.primaryMuscle as MuscleGroup;
-        const relevantLedgerMuscle = [
-          primaryMuscle,
-          ...getMuscleGroupParents(primaryMuscle),
-        ].find((m) => volumeLedger[m] !== undefined);
-
-        if (relevantLedgerMuscle && originalTotals[relevantLedgerMuscle] > 0) {
-          const oldProportion =
-            exercise.effectiveSets / originalTotals[relevantLedgerMuscle];
-          const newTargetSets =
-            (volumeLedger[relevantLedgerMuscle] ?? 0) * oldProportion;
-
-          exercise.targetSets = exercise.isUnilateral
-            ? Math.max(2, Math.round(newTargetSets * 2))
-            : Math.max(1, Math.round(newTargetSets));
-        }
-      }
-    }
 
     const postAiSetsCount: { [key: string]: number } = {};
     Object.values(MuscleGroup).forEach((m) => (postAiSetsCount[m] = 0));
@@ -444,13 +411,13 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
       if (!exercisesForGroup.length) continue;
 
       let cycle = 0;
-      while (Math.abs(diff) > 0.25 && cycle < 50) {
+      while (Math.abs(diff) > 0.25 && cycle < 100) {
         const exItem = exercisesForGroup[cycle % exercisesForGroup.length];
         const ex = exItem.exercise;
         const changeSign = Math.sign(diff);
         const setsChange = ex.isUnilateral ? 2 * changeSign : 1 * changeSign;
 
-        if (ex.targetSets + setsChange < (ex.isUnilateral ? 2 : 1)) {
+        if (ex.targetSets + setsChange < 2) {
           cycle++;
           continue;
         }
