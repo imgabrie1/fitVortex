@@ -25,7 +25,7 @@ const generateMacroCycleName = (ref?: any) =>
 
 const generateMicroCycleName = (refMicro?: any, idx = 1) =>
   refMicro?.microCycleName
-    ? `${refMicro.microCycleName} — copy ${idx}`
+    ? `${refMicro.microCycleName} ${idx}`
     : `Microcycle ${new Date().toISOString().split("T")[0]} #${idx}`;
 
 interface IGenerateNextMacroCycle {
@@ -90,6 +90,18 @@ export const generateNextMacroCycleService = async ({
         cycleItems: {
           workout: {
             workoutExercises: { exercise: true },
+          },
+        },
+      },
+    },
+    order: {
+      microCycles: {
+        cycleItems: {
+          position: "ASC",
+          workout: {
+            workoutExercises: {
+              position: "ASC",
+            },
           },
         },
       },
