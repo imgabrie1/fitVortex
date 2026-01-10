@@ -55,7 +55,8 @@ if (!apiKey) {
   throw new AppError("GEMINI_API_KEY env não existe");
 }
 const genai = new GoogleGenAI({ apiKey });
-const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+const DEFAULT_MODEL =
+  process.env.GEMINI_MODEL || "gemini-3-flash-preview";
 
 function validateWorkoutPlan(obj: any): obj is IWorkoutPlan {
   if (!obj || typeof obj !== "object") return false;
@@ -273,14 +274,19 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
         contents: [{ role: "user", parts: [{ text: aiPrompt }] }],
         config: {
           responseMimeType: "application/json",
-          maxOutputTokens: 1200,
+          maxOutputTokens: 4000,
           temperature: 0.3,
         },
       });
-      aiRawText =
-        resp?.candidates?.[0]?.content?.[0]?.parts?.[0]?.text ??
-        resp?.text ??
-        null;
+
+      if (resp.candidates && resp.candidates[0].content.parts) {
+        aiRawText = resp.candidates[0].content.parts
+          .filter((part: any) => "text" in part)
+          .map((part: any) => part.text)
+          .join("");
+      } else {
+        aiRawText = resp.text;
+      }
     } catch (err: any) {
       console.error(
         "Erro no Gemini SDK:",
@@ -498,7 +504,18 @@ Lembre-se: VOLUMES SUGERIDOS > ESTRUTURA IDEAL. Seja criativo na distribuição!
   volumeAnalysis.forEach((v) => {
     const aiSets = aiGeneratedSets[v.muscleGroup] || 0;
     const suggestedSets = v.newSuggestedTotalSets;
-    const diff = aiSets - suggestedSets;
+    const originalSets = v.totalSets;
+    const diffSugerido = aiSets - suggestedSets;
+    const diffOriginal = aiSets - originalSets;
+    console.log(
+      `- ${
+        v.muscleGroup
+      }: Antes ${originalSets.toFixed(2)}, Sugerido ${suggestedSets.toFixed(
+        2
+      )}, AI Gerou ${aiSets.toFixed(2)} (Diferença Sugerido: ${diffSugerido.toFixed(
+        2
+      )}, Diferença Original: ${diffOriginal.toFixed(2)})`
+    );
   });
 
   const queryRunner = AppDataSource.createQueryRunner();
