@@ -23,10 +23,14 @@ const generateMacroCycleName = (ref?: any) =>
     ? `${ref.macroCycleName} — próximo`
     : `Macrocycle ${new Date().toISOString().split("T")[0]}`;
 
-const generateMicroCycleName = (refMicro?: any, idx = 1) =>
-  refMicro?.microCycleName
-    ? `${refMicro.microCycleName} ${idx}`
-    : `Microcycle ${new Date().toISOString().split("T")[0]} #${idx}`;
+const generateMicroCycleName = (refMicro?: any, idx = 1) => {
+  if (refMicro?.microCycleName) {
+    // Remove números no final para permitir re-indexação (ex: "Semana 1" vira "Semana")
+    const baseName = refMicro.microCycleName.replace(/\s+\d+$/, "").trim();
+    return `${baseName} ${idx}`;
+  }
+  return `Microcycle ${new Date().toISOString().split("T")[0]} #${idx}`;
+};
 
 interface IGenerateNextMacroCycle {
   macroCycleId: string;
