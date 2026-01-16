@@ -16,10 +16,21 @@ import {
   getMuscleGroupParents,
 } from "../../enum/muscleGroup.enum";
 
-const generateMacroCycleName = (ref?: any) =>
-  ref?.macroCycleName
-    ? `${ref.macroCycleName} — próximo`
-    : `Macrocycle ${new Date().toISOString().split("T")[0]}`;
+const generateMacroCycleName = (ref?: any) => {
+  if (ref?.macroCycleName) {
+    const currentName = ref.macroCycleName;
+    const match = currentName.match(/(.+?)\s+(\d+)$/);
+
+    if (match) {
+      const baseName = match[1];
+      const nextNumber = parseInt(match[2], 10) + 1;
+      return `${baseName} ${nextNumber}`;
+    }
+
+    return `${currentName} 2`;
+  }
+  return `Macrocycle ${new Date().toISOString().split("T")[0]}`;
+};
 
 const generateMicroCycleName = (refMicro?: any, idx = 1) => {
   if (refMicro?.microCycleName) {
@@ -61,8 +72,7 @@ if (!apiKey) {
 const genai = new GoogleGenAI({ apiKey });
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
 
-// Timeout configurável para chamadas de IA (em segundos)
-const AI_TIMEOUT_MS = 45000; // 45 segundos
+const AI_TIMEOUT_MS = 45000;
 
 function validateWorkoutPlan(obj: any): obj is IWorkoutPlan {
   if (!obj || typeof obj !== "object") return false;
@@ -99,14 +109,12 @@ function safelyParseAIResponse(text: string): IWorkoutPlan | null {
   }
 }
 
-// Função para criar um timeout Promise
 const createTimeoutPromise = (ms: number, message: string) => {
   return new Promise<never>((_, reject) => {
     setTimeout(() => reject(new Error(`TIMEOUT: ${message}`)), ms);
   });
 };
 
-// Função wrapper para chamada da IA com timeout
 const callAIWithTimeout = async (
   prompt: string,
   timeoutMs: number
@@ -143,7 +151,6 @@ const callAIWithTimeout = async (
   ]);
 };
 
-// Função para aplicar modificações manuais ao plano de treino
 function applyManualModifications(
   workoutPlan: any[],
   modifications: IGenerateNextMacroCycle["modifications"],
@@ -176,7 +183,6 @@ function applyManualModifications(
           continue;
         }
 
-        // Verificar se exercício existe
         const fromExists = allExercises.some(
           (e) => e.name === mod.fromExercise
         );
@@ -193,15 +199,11 @@ function applyManualModifications(
           continue;
         }
 
-        // Encontrar e substituir
         const exerciseIndex = workout.exercises.findIndex(
           (e: any) => e.exerciseName === mod.fromExercise
         );
 
         if (exerciseIndex !== -1) {
-          console.log(
-            `Substituindo "${mod.fromExercise}" por "${mod.toExercise}" no workout "${mod.workoutName}"`
-          );
           workout.exercises[exerciseIndex].exerciseName = mod.toExercise;
         } else {
           console.warn(
@@ -244,7 +246,6 @@ function applyManualModifications(
           continue;
         }
 
-        // Verificar se já existe
         const alreadyExists = workout.exercises.some(
           (e: any) => e.exerciseName === mod.toExercise
         );
@@ -253,9 +254,13 @@ function applyManualModifications(
           console.log(
             `Adicionando "${mod.toExercise}" ao workout "${mod.workoutName}"`
           );
+          const defaultSets = 3;
+          const userSpecifiedSets = mod.targetSets || defaultSets;
+          const clampedSets = Math.max(2, Math.min(userSpecifiedSets, 6));
+
           workout.exercises.push({
             exerciseName: mod.toExercise,
-            targetSets: mod.targetSets || 3, // Default 3 séries
+            targetSets: clampedSets,
             isUnilateral:
               allExercises.find((e) => e.name === mod.toExercise)
                 ?.default_unilateral || false,
@@ -280,7 +285,6 @@ export const generateNextMacroCycleService = async ({
   maxSetsPerMicroCycle = 24,
   legPriority = "Quadríceps (Total)",
 }: IGenerateNextMacroCycle): Promise<IMacroCycle> => {
-  // Validação: modifications só funciona com createNewWorkout: true
   if (modifications && !createNewWorkout) {
     throw new AppError(
       "Modifications só pode ser usado com createNewWorkout: true",
@@ -295,7 +299,6 @@ export const generateNextMacroCycleService = async ({
   const user = await userRepo.findOneBy({ id: userId });
   if (!user) throw new AppError("Usuário não encontrado", 404);
 
-  // Carregar apenas o PRIMEIRO microciclo como referência
   const referenceMacroCycle = await macroCycleRepo.findOne({
     where: { id: macroCycleId, user: { id: userId } },
     relations: {
@@ -324,7 +327,6 @@ export const generateNextMacroCycleService = async ({
   if (!referenceMacroCycle)
     throw new AppError("Macro ciclo de referência não encontrado", 404);
 
-  // Obter análise de volume ajustado (SEMPRE fazemos isso)
   const volumeAnalysis = await adjustVolumeService(macroCycleId, userId, {
     weights: { firstVsLast: 0.6, weeklyAverage: 0.4 },
     rules: {
@@ -342,7 +344,6 @@ export const generateNextMacroCycleService = async ({
     },
   });
 
-  // Usar apenas o PRIMEIRO microciclo como referência para IA
   const referenceMicroCycle = referenceMacroCycle.microCycles[0];
   if (!referenceMicroCycle) {
     throw new AppError(
@@ -351,7 +352,6 @@ export const generateNextMacroCycleService = async ({
     );
   }
 
-  // Preparar o plano de treino do PRIMEIRO microciclo apenas
   const oldWorkoutPlan = referenceMicroCycle.cycleItems.map((ci) => ({
     name: ci.workout.name,
     exercises: ci.workout.workoutExercises.map((we) => {
@@ -370,13 +370,10 @@ export const generateNextMacroCycleService = async ({
     }),
   }));
 
-  // Buscar todos os exercícios do banco
   const allExercises = await exerciseRepo.find();
 
-  // 1. FILTRAR EXERCÍCIOS: Pegar apenas músculos ativos da análise de volume
   const activeMuscles = volumeAnalysis.map((v) => v.muscleGroup);
 
-  // Criar lista de músculos relevantes (incluindo pais na hierarquia)
   const relevantMuscles = new Set<MuscleGroup>();
   activeMuscles.forEach((muscle) => {
     relevantMuscles.add(muscle);
@@ -385,14 +382,12 @@ export const generateNextMacroCycleService = async ({
     );
   });
 
-  // Filtrar exercícios que trabalham músculos relevantes
   const relevantExercises = allExercises.filter(
     (e) =>
       relevantMuscles.has(e.primaryMuscle) ||
       e.secondaryMuscle?.some((s) => relevantMuscles.has(s))
   );
 
-  // Se não houver exercícios relevantes, usar todos (fallback)
   const exercisesForPrompt = (
     relevantExercises.length > 0 ? relevantExercises : allExercises
   ).map((e) => ({
@@ -432,7 +427,6 @@ export const generateNextMacroCycleService = async ({
   };
 
   if (createNewWorkout) {
-    // APLICAR MODIFICAÇÕES MANUAIS ANTES DE ENVIAR PARA IA
     let workoutPlanForAI = JSON.parse(JSON.stringify(oldWorkoutPlan));
 
     if (modifications && modifications.length > 0) {
@@ -444,7 +438,6 @@ export const generateNextMacroCycleService = async ({
       );
     }
 
-    // OTIMIZAÇÃO: IA processa apenas UM template com prompt otimizado
     const aiPrompt = `Você é um especialista em periodização. Crie um plano de treino otimizado.
 
 PRIORIDADE DE PERNAS: ${
@@ -554,7 +547,6 @@ RESPONDA APENAS JSON VÁLIDO:
     }
 
     if (aiFallbackUsed || !aiResponse) {
-      // FALLBACK: Usar método de ajuste de volume (sem IA) APÓS modificações
       console.log(
         "Usando fallback: ajuste de volume sem IA (com modificações aplicadas)"
       );
@@ -564,7 +556,6 @@ RESPONDA APENAS JSON VÁLIDO:
         volumeLedger[v.muscleGroup] = v.newSuggestedTotalSets;
       });
 
-      // Usar workoutPlanForAI que já tem as modificações aplicadas
       const mutableWorkoutPlan = JSON.parse(JSON.stringify(workoutPlanForAI));
 
       const postAiSetsCount: { [key: string]: number } = {};
@@ -665,7 +656,6 @@ RESPONDA APENAS JSON VÁLIDO:
         })),
       };
     } else {
-      // Usar resposta da IA
       console.log("Processando resposta da IA...");
 
       finalPlan = {
@@ -680,7 +670,6 @@ RESPONDA APENAS JSON VÁLIDO:
               dbExercise?.default_unilateral ??
               false;
 
-            // Garantir mínimo de 2 séries, máximo 6
             const targetSets = Math.max(2, Math.min(exercise.targetSets, 6));
 
             return {
@@ -693,7 +682,6 @@ RESPONDA APENAS JSON VÁLIDO:
       };
     }
   } else {
-    // Método sem IA (apenas ajuste de volume) - NÃO aplica modifications
     console.log("Usando método sem IA (ajuste de volume apenas)");
 
     const volumeLedger: { [key in MuscleGroup]?: number } = {};
@@ -801,7 +789,6 @@ RESPONDA APENAS JSON VÁLIDO:
     };
   }
 
-  // Calcular volumes gerados para logging
   const aiGeneratedSets: { [key: string]: number } = {};
   for (const muscle of Object.values(MuscleGroup)) {
     aiGeneratedSets[muscle] = 0;
@@ -874,7 +861,6 @@ RESPONDA APENAS JSON VÁLIDO:
     newMacroCycle.user = user;
     newMacroCycle.macroCycleName = generateMacroCycleName(referenceMacroCycle);
 
-    // OTIMIZAÇÃO: Replicar template para N microciclos
     const microcyclesCount =
       referenceMacroCycle.microCycles?.length ||
       referenceMacroCycle.microQuantity ||
@@ -893,7 +879,6 @@ RESPONDA APENAS JSON VÁLIDO:
 
     newMacroCycle.microCycles = [];
 
-    // REPLICAR template para cada microciclo
     for (let i = 0; i < microcyclesCount; i++) {
       const newMicroCycle = new MicroCycle();
       newMicroCycle.user = user;
@@ -907,7 +892,6 @@ RESPONDA APENAS JSON VÁLIDO:
       await queryRunner.manager.save(newMicroCycle);
       newMacroCycle.microCycles.push(newMicroCycle);
 
-      // Usar o MESMO template (finalPlan) para todos os microciclos
       let workoutPosition = 0;
       for (const workoutData of finalPlan.workouts) {
         const newWorkout = new Workout();
@@ -971,13 +955,9 @@ RESPONDA APENAS JSON VÁLIDO:
       endDate: formatDateToDDMMYYYY(savedMacroCycle.endDate),
     };
 
-    console.log(
-      `✅ Macro ciclo criado com ${microcyclesCount} microciclos idênticos`
-    );
     return response;
   } catch (error) {
     await queryRunner.rollbackTransaction();
-    console.error("❌ Falha ao gerar um novo macro ciclo:", error);
     throw new AppError("Falha ao gerar um novo macro ciclo", 500);
   } finally {
     await queryRunner.release();
