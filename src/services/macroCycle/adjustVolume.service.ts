@@ -31,6 +31,7 @@ interface VolumeAnalysis {
   adjustmentPercentage: number;
   reason: string;
   totalSets: number;
+  primaryTotalSets: number;
   newSuggestedTotalSets: number;
 }
 
@@ -92,14 +93,24 @@ export const adjustVolumeService = async (
 
   const referenceMicroCycle = sortedItems[0];
   const totalSetsByMuscleGroup: { [key: string]: number } = {};
+  const primaryTotalSetsByMuscleGroup: { [key: string]: number } = {};
 
-  const addSetsToHierarchy = (muscle: MuscleGroup, sets: number) => {
+  const addSetsToHierarchy = (muscle: MuscleGroup, sets: number, isPrimary: boolean) => {
     totalSetsByMuscleGroup[muscle] =
       (totalSetsByMuscleGroup[muscle] || 0) + sets;
+    
+    if (isPrimary) {
+      primaryTotalSetsByMuscleGroup[muscle] = (primaryTotalSetsByMuscleGroup[muscle] || 0) + sets;
+    }
+
     const parents = getMuscleGroupParents(muscle);
     for (const parent of parents) {
       totalSetsByMuscleGroup[parent] =
         (totalSetsByMuscleGroup[parent] || 0) + sets;
+      
+      if (isPrimary) {
+        primaryTotalSetsByMuscleGroup[parent] = (primaryTotalSetsByMuscleGroup[parent] || 0) + sets;
+      }
     }
   };
 
@@ -111,15 +122,17 @@ export const adjustVolumeService = async (
           const primaryMuscle = workoutExercise.exercise.primaryMuscle;
           const secondaryMuscles = workoutExercise.exercise.secondaryMuscle;
           const sets = workoutExercise.targetSets;
-          const notes = workoutExercise.notes;
+          const isUnilateral = workoutExercise.is_unilateral;
+
+          const effectiveSets = isUnilateral ? sets / 2 : sets;
 
           if (primaryMuscle) {
-            addSetsToHierarchy(primaryMuscle, sets);
+            addSetsToHierarchy(primaryMuscle, effectiveSets, true);
           }
 
           if (secondaryMuscles) {
             for (const secondaryMuscle of secondaryMuscles) {
-              addSetsToHierarchy(secondaryMuscle, sets * 0.5);
+              addSetsToHierarchy(secondaryMuscle, effectiveSets * 0.5, false);
             }
           }
         }
@@ -224,6 +237,7 @@ export const adjustVolumeService = async (
     }
 
     const totalSets = totalSetsByMuscleGroup[muscleGroup] || 0;
+    const primaryTotalSets = primaryTotalSetsByMuscleGroup[muscleGroup] || 0;
     const newTotalSets = totalSets * (1 + adjustmentPercentage / 100);
     let newSuggestedTotalSets = Math.round(newTotalSets * 2) / 2;
 
@@ -244,6 +258,7 @@ export const adjustVolumeService = async (
       adjustmentPercentage,
       reason,
       totalSets,
+      primaryTotalSets,
       newSuggestedTotalSets,
     });
   }
