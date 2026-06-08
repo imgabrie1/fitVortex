@@ -13,26 +13,28 @@ export enum MuscleGroup {
   BACK_RHOMBOIDS = "Rombóides",
 
 
-  LEGS_TOTAL = "Pernas (Total)",
   QUADRICEPS = "Quadríceps (Total)",
   QUADRICEPS_RECTUS_FEMORIS = "Reto Femoral",
   QUADRICEPS_VASTUS_LATERALIS = "Vasto Lateral",
   QUADRICEPS_VASTUS_MEDIALIS = "Vasto Medial",
   QUADRICEPS_VASTUS_INTERMEDIUS = "Vasto Intermédio",
+
   HAMSTRINGS = "Posterior de Coxa (Total)",
   HAMSTRINGS_BICEPS_FEMORIS = "Bíceps Femoral",
   HAMSTRINGS_SEMITENDINOSUS = "Semitendíneo",
   HAMSTRINGS_SEMIMEMBRANOSUS = "Semimembranoso",
+
   CALVES = "Panturrilhas (Total)",
   CALVES_GASTROCNEMIUS = "Gastrocnêmio",
   CALVES_SOLEUS = "Sóleo",
+
   GLUTES = "Glúteos",
 
 
-  SHOULDERS_TOTAL = "Ombros (Total)",
   SHOULDERS_FRONT_DELT = "Deltóide Anterior",
   SHOULDERS_SIDE_DELT = "Deltóide Lateral",
   SHOULDERS_REAR_DELT = "Deltóide Posterior",
+  SHOULDERS_TOTAL = "Ombros (Total)",
 
 
   BICEPS_TOTAL = "Bíceps (Total)",
@@ -68,13 +70,6 @@ export const MuscleGroupHierarchy: Record<string, MuscleGroup[]> = {
     MuscleGroup.BACK_RHOMBOIDS,
   ],
 
-  [MuscleGroup.LEGS_TOTAL]: [
-    MuscleGroup.QUADRICEPS,
-    MuscleGroup.HAMSTRINGS,
-    MuscleGroup.CALVES,
-    MuscleGroup.GLUTES,
-  ],
-
   [MuscleGroup.QUADRICEPS]: [
     MuscleGroup.QUADRICEPS_RECTUS_FEMORIS,
     MuscleGroup.QUADRICEPS_VASTUS_LATERALIS,
@@ -91,12 +86,6 @@ export const MuscleGroupHierarchy: Record<string, MuscleGroup[]> = {
   [MuscleGroup.CALVES]: [
     MuscleGroup.CALVES_GASTROCNEMIUS,
     MuscleGroup.CALVES_SOLEUS,
-  ],
-
-  [MuscleGroup.SHOULDERS_TOTAL]: [
-    MuscleGroup.SHOULDERS_FRONT_DELT,
-    MuscleGroup.SHOULDERS_SIDE_DELT,
-    MuscleGroup.SHOULDERS_REAR_DELT,
   ],
 
   [MuscleGroup.BICEPS_TOTAL]: [
