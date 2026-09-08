@@ -13,6 +13,7 @@ export const recordWorkoutSchema = z.object({
       exerciseID: z.string().uuid(),
       sets: z.array(setSchema).min(1, { message: 'É necessário registrar pelo menos uma série por exercício.' }),
       notes: z.string().optional(),
+      is_unilateral: z.boolean().optional(),
     })
   ).min(1, { message: 'É necessário registrar pelo menos um exercício.' }),
 });
