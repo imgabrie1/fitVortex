@@ -81,26 +81,40 @@ export const recordWorkoutService = async (
         });
       });
 
-      if (exerciseData.notes !== undefined && exerciseData.notes !== null) {
-        const workoutExercise = await workoutExerciseRepo.findOne({
-          where: {
-            workout: { id: workoutID },
-            exercise: { id: exerciseData.exerciseID },
-          },
-        });
+      let isUnilateralForVolume = false;
 
-        if (workoutExercise) {
+      const workoutExercise = await workoutExerciseRepo.findOne({
+        where: {
+          workout: { id: workoutID },
+          exercise: { id: exerciseData.exerciseID },
+        },
+      });
+
+      if (workoutExercise) {
+        let needsSave = false;
+        if (exerciseData.notes !== undefined && exerciseData.notes !== null) {
           workoutExercise.notes = exerciseData.notes;
+          needsSave = true;
+        }
+        if (exerciseData.is_unilateral !== undefined) {
+          workoutExercise.is_unilateral = exerciseData.is_unilateral;
+          needsSave = true;
+        }
+        if (needsSave) {
           await workoutExerciseRepo.save(workoutExercise);
         }
+        isUnilateralForVolume = workoutExercise.is_unilateral;
+      } else {
+        isUnilateralForVolume = exerciseData.is_unilateral ?? exercise.default_unilateral ?? false;
       }
 
       await setRepo.save(setsToCreate);
 
       if (exercise.primaryMuscle) {
+        const setsToAdd = isUnilateralForVolume ? setsToCreate.length / 2 : setsToCreate.length;
         setsByPrimaryMuscle[exercise.primaryMuscle] =
           (setsByPrimaryMuscle[exercise.primaryMuscle] || 0) +
-          setsToCreate.length;
+          setsToAdd;
       }
 
       for (const set of setsToCreate) {

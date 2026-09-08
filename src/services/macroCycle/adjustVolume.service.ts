@@ -91,7 +91,7 @@ export const adjustVolumeService = async (
     }
   }
 
-  const referenceMicroCycle = sortedItems[0];
+  const referenceMicroCycle = sortedItems[sortedItems.length - 1];
   const totalSetsByMuscleGroup: { [key: string]: number } = {};
   const primaryTotalSetsByMuscleGroup: { [key: string]: number } = {};
 
