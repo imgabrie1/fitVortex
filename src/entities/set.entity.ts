@@ -17,6 +17,9 @@ export class Set {
   @Column({ type: "enum", enum: Side, default: Side.BOTH })
   side: Side;
 
+  @Column({ type: "int", default: 0 })
+  position: number;
+
   @ManyToOne(
     () => MicroCycleItem,
     (microCycleItem: MicroCycleItem) => microCycleItem.sets,

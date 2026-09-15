@@ -7,8 +7,20 @@ const SERVER_URL = process.env.SERVER_URL || `http://localhost:${PORT}`;
 
 AppDataSource.initialize()
 
-  .then(() => {
+  .then(async () => {
     console.log("Database connected!");
+
+    if (process.env.NODE_ENV === "production") {
+      try {
+        console.log("Running pending migrations...");
+        await AppDataSource.runMigrations();
+        console.log("Migrations executed successfully!");
+      } catch (migrationError) {
+        console.error("Error executing migrations on startup:", migrationError);
+        throw migrationError;
+      }
+    }
+
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       if (process.env.NODE_ENV === "production") {

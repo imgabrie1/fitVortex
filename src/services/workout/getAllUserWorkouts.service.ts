@@ -42,6 +42,15 @@ export const getAllUserWorkoutsService = async (
         },
       },
     },
+    order: {
+      createdAt: "DESC",
+      cycleItems: {
+        position: "ASC",
+        sets: {
+          position: "ASC",
+        },
+      },
+    },
     skip: (page - 1) * safeLimit,
     take: safeLimit,
     
