@@ -21,6 +21,8 @@ export const getMacroCycleByIDService = async (
     .leftJoinAndSelect("workoutExercises.exercise", "workoutExercise")
     .where("macroCycle.id = :macroCycleID", { macroCycleID })
     .orderBy("microCycle.createdAt", "ASC")
+    .addOrderBy("cycleItems.position", "ASC")
+    .addOrderBy("sets.position", "ASC")
     .getOne();
 
   if (!macroCycle) {

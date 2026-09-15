@@ -19,6 +19,14 @@ export const getMicroCycleByIDService = async (
       "cycleItems.sets",
       "cycleItems.sets.exercise",
     ],
+    order: {
+      cycleItems: {
+        position: "ASC",
+        sets: {
+          position: "ASC",
+        },
+      },
+    },
   });
 
   if (!microCycle) {

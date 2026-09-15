@@ -71,11 +71,12 @@ export const recordWorkoutService = async (
         );
       }
 
-      const setsToCreate = exerciseData.sets.map((setData) => {
+      const setsToCreate = exerciseData.sets.map((setData, index) => {
         return setRepo.create({
           reps: setData.reps,
           weight: setData.weight,
           side: setData.side || Side.BOTH,
+          position: index,
           microCycleItem,
           exercise,
         });
