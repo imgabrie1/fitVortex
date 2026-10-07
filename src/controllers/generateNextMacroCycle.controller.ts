@@ -3,19 +3,20 @@ import { generateNextMacroCycleService } from "../services/macroCycle/generateNe
 
 export const generateNextMacroCycleController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
   const { id: macroCycleId } = req.params;
   const userId = req.id;
-  const { modifications, maxSetsPerMicroCycle, legPriority } = req.body;
+  const { modifications, maxSetsPerMicroCycle } = req.body;
+  // TODO: legPriority para funcionalidade futura (não utilizada ainda no service)
+  // const { modifications, maxSetsPerMicroCycle, legPriority } = req.body;
 
-  const newMacroCycle = await generateNextMacroCycleService({
+  const { generatedMacroCycle } = await generateNextMacroCycleService({
     macroCycleId,
     userId,
     modifications,
     maxSetsPerMicroCycle,
-    legPriority,
   });
 
-  return res.status(201).json(newMacroCycle);
+  return res.status(201).json(generatedMacroCycle);
 };

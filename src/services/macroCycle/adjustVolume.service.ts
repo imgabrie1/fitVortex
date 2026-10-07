@@ -21,7 +21,7 @@ interface AdjustmentOptions {
   maxSetsPerMicroCycle?: number;
 }
 
-interface VolumeAnalysis {
+export interface VolumeAnalysis {
   muscleGroup: MuscleGroup;
   volumes: number[];
   firstVsLastChange: number | null;
@@ -179,11 +179,45 @@ export const adjustVolumeService = async (
         ? weeklyChanges.reduce((a, b) => a + b, 0) / weeklyChanges.length
         : null;
 
+    let endDeclineDetected = false;
+    let endDeclineChange = 0;
+
+    if (volumes.length >= 3) {
+      const vL2 = volumes[volumes.length - 3];
+      const vL1 = volumes[volumes.length - 2];
+      const vL0 = volumes[volumes.length - 1];
+
+      if (vL2 > 0 && vL1 > 0) {
+        const drop1 = ((vL1 - vL2) / vL2) * 100;
+        const drop2 = ((vL0 - vL1) / vL1) * 100;
+
+        if (drop1 <= -10 && drop2 <= -10) {
+          endDeclineDetected = true;
+          endDeclineChange = (drop1 + drop2) / 2;
+        }
+      }
+    }
+
     let combinedChange = 0;
+    let currentDecreaseRules = [...options.rules.decrease];
+
     if (firstVsLastChange !== null && weeklyAverageChange !== null) {
-      combinedChange =
-        firstVsLastChange * options.weights.firstVsLast +
-        weeklyAverageChange * options.weights.weeklyAverage;
+      if (endDeclineDetected) {
+        combinedChange =
+          firstVsLastChange * 0.2 +
+          weeklyAverageChange * 0.2 +
+          endDeclineChange * 0.6;
+
+        currentDecreaseRules = [
+          { threshold: -20, percentage: -20 },
+          { threshold: -10, percentage: -15 },
+          { threshold: -5, percentage: -10 },
+        ];
+      } else {
+        combinedChange =
+          firstVsLastChange * options.weights.firstVsLast +
+          weeklyAverageChange * options.weights.weeklyAverage;
+      }
     } else if (firstVsLastChange !== null) {
       combinedChange = firstVsLastChange;
     } else if (weeklyAverageChange !== null) {
@@ -193,7 +227,7 @@ export const adjustVolumeService = async (
     const sortedIncreaseRules = options.rules.increase.sort(
       (a, b) => b.threshold - a.threshold
     );
-    const sortedDecreaseRules = options.rules.decrease.sort(
+    const sortedDecreaseRules = currentDecreaseRules.sort(
       (a, b) => a.threshold - b.threshold
     );
 
@@ -202,7 +236,7 @@ export const adjustVolumeService = async (
     let reason = "";
 
     let appliedRule = false;
-    if (combinedChange > options.rules.maintain.threshold) {
+    if (combinedChange > options.rules.maintain.threshold && !endDeclineDetected) {
       for (const rule of sortedIncreaseRules) {
         if (combinedChange >= rule.threshold) {
           suggestion = "increase";
@@ -222,6 +256,11 @@ export const adjustVolumeService = async (
           reason = `A queda combinada de ${combinedChange.toFixed(
             2
           )}% foi abaixo do limite de ${rule.threshold}%.`;
+
+          if (endDeclineDetected) {
+            reason += ` (Fadiga detectada: duas quedas >= 10% no final do macro; regra de redução mais agressiva aplicada).`;
+          }
+
           appliedRule = true;
           break;
         }
@@ -234,6 +273,10 @@ export const adjustVolumeService = async (
       reason = `A variação combinada de ${combinedChange.toFixed(
         2
       )}% está dentro dos limites para manutenção.`;
+
+      if (endDeclineDetected) {
+        reason += ` (Sinal de fadiga detectado, mas a queda total não foi suficiente para forçar redução).`;
+      }
     }
 
     const totalSets = totalSetsByMuscleGroup[muscleGroup] || 0;

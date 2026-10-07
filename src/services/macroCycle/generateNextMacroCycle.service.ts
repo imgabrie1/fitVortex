@@ -1,7 +1,7 @@
 import { AppDataSource } from "../../data-source";
 import { MacroCycle } from "../../entities/macroCycle.entity";
 import { AppError } from "../../errors";
-import { adjustVolumeService } from "./adjustVolume.service";
+import { adjustVolumeService, VolumeAnalysis } from "./adjustVolume.service";
 import { User } from "../../entities/user.entity";
 import { MicroCycle } from "../../entities/microCycle.entity";
 import { Workout } from "../../entities/workout.entity";
@@ -10,6 +10,7 @@ import { Exercise } from "../../entities/exercise.entity";
 import { MicroCycleItem } from "../../entities/microCycleItem.entity";
 import { IMacroCycle } from "../../interfaces/macroCycle.interface";
 import { formatDateToDDMMYYYY } from "../../utils/formatDate";
+
 import {
   MuscleGroup,
   getMuscleGroupParents,
@@ -50,7 +51,8 @@ interface IGenerateNextMacroCycle {
     targetSets?: number;
   }>;
   maxSetsPerMicroCycle?: number;
-  legPriority?: "Quadríceps (Total)" | "Posterior de Coxa (Total)";
+  // TODO: legPriority para funcionalidade futura para priorizar volume de pernas (Quadríceps ou Posterior)
+  // legPriority?: "Quadríceps (Total)" | "Posterior de Coxa (Total)";
 }
 
 function clampSets(targetSets: number, isUnilateral: any): number {
@@ -374,8 +376,11 @@ export const generateNextMacroCycleService = async ({
   userId,
   modifications,
   maxSetsPerMicroCycle = 24,
-  legPriority = "Quadríceps (Total)",
-}: IGenerateNextMacroCycle): Promise<IMacroCycle> => {
+  // TODO: legPriority para funcionalidade futura (não utilizada ainda)
+  // legPriority = "Quadríceps (Total)",
+}: IGenerateNextMacroCycle): Promise<{
+  generatedMacroCycle: IMacroCycle & { volumeReport?: VolumeAnalysis[] };
+}> => {
   const macroCycleRepo = AppDataSource.getRepository(MacroCycle);
   const userRepo = AppDataSource.getRepository(User);
   const exerciseRepo = AppDataSource.getRepository(Exercise);
@@ -426,9 +431,14 @@ export const generateNextMacroCycleService = async ({
       ],
       maintain: { threshold: 9 },
     },
+    maxSetsPerMicroCycle,
   });
 
-  const referenceMicroCycle = referenceMacroCycle.microCycles[0];
+  const sortedMicroCycles = [...referenceMacroCycle.microCycles].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
+  const referenceMicroCycle = sortedMicroCycles[sortedMicroCycles.length - 1];
+
   if (!referenceMicroCycle) {
     throw new AppError(
       "Nenhum microciclo encontrado no macro ciclo de referência",
@@ -521,7 +531,7 @@ export const generateNextMacroCycleService = async ({
       newMicroCycle.user = user;
       newMicroCycle.macroCycle = newMacroCycle;
       newMicroCycle.microCycleName = generateMicroCycleName(
-        referenceMacroCycle,
+        referenceMicroCycle,
         i + 1,
       );
       newMicroCycle.trainingDays = referenceMicroCycle.trainingDays ?? [];
@@ -594,13 +604,14 @@ export const generateNextMacroCycleService = async ({
     if (!savedMacroCycle)
       throw new AppError("Falha ao carregar o macro ciclo criado", 500);
 
-    const response: IMacroCycle = {
+    const response: IMacroCycle & { volumeReport?: VolumeAnalysis[] } = {
       ...savedMacroCycle,
       startDate: formatDateToDDMMYYYY(savedMacroCycle.startDate),
       endDate: formatDateToDDMMYYYY(savedMacroCycle.endDate),
+      volumeReport: volumeAnalysis,
     };
 
-    return response;
+    return { generatedMacroCycle: response };
   } catch (error) {
     await queryRunner.rollbackTransaction();
     throw new AppError("Falha ao gerar um novo macro ciclo", 500);
