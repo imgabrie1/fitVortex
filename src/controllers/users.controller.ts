@@ -7,22 +7,18 @@ import getUserByIDService from "../services/users/getUserByID.service";
 import getUsersService from "../services/users/getUsers.service";
 import { Request, Response } from "express";
 import patchUserService from "../services/users/patchUser.service";
+import { createUserSchema, updatePasswordSchema, updateUser } from "../schemas/user.schema";
+import patchPasswordService from "../services/users/patchPassword.service";
 
-
-export const createUserController = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
-  const userData: iUser = req.body;
-
-  const newUser = await createUserService(userData);
-
-  return res.status(201).json(newUser);
+export const createUserController = async (req: Request, res: Response) => {
+  const data = createUserSchema.parse(req.body);
+  const user = await createUserService({ ...data, admin: false });
+  return res.status(201).json(user);
 };
 
 export const getUsersController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
   const users = await getUsersService();
   return res.status(200).json(users);
@@ -30,7 +26,7 @@ export const getUsersController = async (
 
 export const getUserByIDController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
   const { id } = req.params;
   const user = await getUserByIDService(id);
@@ -44,7 +40,7 @@ export const getUserByIDController = async (
 
 export const deleteUserController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
   const { id } = req;
   if (id !== req.params.id) {
@@ -58,27 +54,34 @@ export const deleteUserController = async (
 
   return res.status(204).send();
 };
-
 export const patchUserController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
   const { id } = req;
+
   if (id !== req.params.id) {
-    throw new AppError("Oh besta, tu só pode editar tua própria conta", 401);
+    throw new AppError("Você só pode editar sua própria conta", 401);
   }
 
-  let newPassword = req.body.password
-  let updatedData = {... req.body}
+  const data = updateUser.parse(req.body);
+  const user = await patchUserService(data, id);
 
-  if(newPassword) {
-    newPassword = hashSync(newPassword, 10);
-    updatedData.password = newPassword
-  } else {
-    delete updatedData.password
+  return res.status(200).json(user);
+};
+
+export const patchPasswordController = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
+  const { id } = req;
+
+  if (id !== req.params.id) {
+    throw new AppError("Você só pode editar sua própria conta", 401);
   }
 
-  const user = await patchUserService(updatedData, id)
+  const { currentPassword, newPassword } = updatePasswordSchema.parse(req.body);
+  await patchPasswordService(id, currentPassword, newPassword);
 
-  return res.status(200).json(user)
+  return res.status(204).send();
 };

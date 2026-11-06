@@ -4,10 +4,8 @@ import {
   Column,
   OneToMany,
   CreateDateColumn,
-  DeleteDateColumn,
   UpdateDateColumn,
   BeforeInsert,
-  BeforeUpdate,
 } from "typeorm";
 import { MacroCycle } from "./macroCycle.entity";
 import { getRounds, hashSync } from "bcryptjs";
@@ -50,7 +48,6 @@ export class User {
   macroCycles: MacroCycle[];
 
   @BeforeInsert()
-  @BeforeUpdate()
   hashPassword() {
     const isEncrypt = getRounds(this.password);
     if (!isEncrypt) {
