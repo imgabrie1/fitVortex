@@ -42,6 +42,10 @@ export const recordWorkoutService = async (
     throw new AppError("Itens do micro ciclo não encontrados", 404);
   }
 
+  microCycleItem.completedAt = new Date();
+  microCycleItem.isSkipped = false;
+  await microCycleItemRepo.save(microCycleItem);
+
   if (!microCycleItem.workout.volume) {
     const newVolume = volumeRepo.create({ workout: microCycleItem.workout });
     await volumeRepo.save(newVolume);

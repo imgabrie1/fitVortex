@@ -40,6 +40,7 @@ export const skipWorkoutService = async (
   }
 
   microCycleItem.isSkipped = true;
+  microCycleItem.completedAt = new Date();
   await microCycleItemRepo.save(microCycleItem);
 
   const workout = await workoutRepo.findOne({
