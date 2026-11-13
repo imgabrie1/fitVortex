@@ -35,6 +35,9 @@ export class MicroCycleItem {
   @Column({ type: "boolean", default: false })
   isSkipped: boolean;
 
+  @Column({ type: "timestamp", nullable: true })
+  completedAt: Date | null;
+
   @CreateDateColumn()
   createdAt: Date;
 }
