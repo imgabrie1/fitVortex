@@ -3,6 +3,8 @@ import {
   createWorkoutController,
   getAllUserWorkoutsController,
   patchWorkoutController,
+  removeExerciseFromWorkoutController,
+  replaceExerciseInWorkoutController,
 } from "../controllers/workout.controller";
 import ensureDataIsValidMiddleware from "../middlewares/ensureDataIsValid.middleware";
 import { updateWorkoutSchema, workoutSchema } from "../schemas/workout.schema";
@@ -27,6 +29,18 @@ workoutRoutes.patch(
   ensureUserIsAuthenticatedMiddleware,
   ensureDataIsValidMiddleware(updateWorkoutSchema),
   patchWorkoutController
+);
+
+workoutRoutes.delete(
+  "/:workoutId/exercise/:workoutExerciseId",
+  ensureUserIsAuthenticatedMiddleware,
+  removeExerciseFromWorkoutController
+);
+
+workoutRoutes.patch(
+  "/:workoutId/exercise/:workoutExerciseId",
+  ensureUserIsAuthenticatedMiddleware,
+  replaceExerciseInWorkoutController
 );
 
 export default workoutRoutes;
