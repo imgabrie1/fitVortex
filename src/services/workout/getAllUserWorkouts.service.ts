@@ -1,5 +1,5 @@
 import { AppDataSource } from "../../data-source";
-import { MicroCycle } from "../../entities/microCycle.entity";
+import { MicroCycleItem } from "../../entities/microCycleItem.entity";
 import { AppError } from "../../errors";
 
 type PaginatedResponse<T> = {
@@ -11,50 +11,46 @@ type PaginatedResponse<T> = {
 };
 
 const DEFAULT_PAGE = 1;
-const DEFAULT_LIMIT = 10;
+const DEFAULT_LIMIT = 5;
 const MAX_LIMIT = 100;
 
 export const getAllUserWorkoutsService = async (
   page: number = DEFAULT_PAGE,
   limit: number = DEFAULT_LIMIT,
   userID: string
-): Promise<PaginatedResponse<MicroCycle>> => {
-  const workoutsRepo = AppDataSource.getRepository(MicroCycle);
+): Promise<PaginatedResponse<MicroCycleItem>> => {
+  const cycleItemRepo = AppDataSource.getRepository(MicroCycleItem);
 
   const safeLimit = Math.min(limit, MAX_LIMIT);
 
-  const [data, total] = await workoutsRepo.findAndCount({
+  const [data, total] = await cycleItemRepo.findAndCount({
     where: {
-      user: { id: userID },
+      microCycle: { user: { id: userID } },
     },
     relations: {
-      cycleItems: {
-        workout: {
-          workoutExercises: {
-            exercise: true,
-          },
-          volume: {
-            entries: true,
-          },
-        },
-        sets: {
+      workout: {
+        workoutExercises: {
           exercise: true,
         },
+        volume: {
+          entries: true,
+        },
       },
+      sets: {
+        exercise: true,
+      },
+      microCycle: true,
     },
     order: {
       createdAt: "DESC",
-      cycleItems: {
+      sets: {
         position: "ASC",
-        sets: {
-          position: "ASC",
-        },
       },
     },
     skip: (page - 1) * safeLimit,
     take: safeLimit,
-    
   });
+
   if (!data || data.length === 0) {
     throw new AppError("Nenhum treino encontrado", 404);
   }
