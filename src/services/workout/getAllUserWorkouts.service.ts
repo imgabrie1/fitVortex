@@ -1,3 +1,4 @@
+import { IsNull, Not } from "typeorm";
 import { AppDataSource } from "../../data-source";
 import { MicroCycleItem } from "../../entities/microCycleItem.entity";
 import { AppError } from "../../errors";
@@ -26,6 +27,8 @@ export const getAllUserWorkoutsService = async (
   const [data, total] = await cycleItemRepo.findAndCount({
     where: {
       microCycle: { user: { id: userID } },
+      completedAt: Not(IsNull()),
+      isSkipped: false,
     },
     relations: {
       workout: {
@@ -42,7 +45,7 @@ export const getAllUserWorkoutsService = async (
       microCycle: true,
     },
     order: {
-      createdAt: "DESC",
+      completedAt: "DESC",
       sets: {
         position: "ASC",
       },

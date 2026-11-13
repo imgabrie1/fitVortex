@@ -45,6 +45,11 @@ export const editRecordedWorkoutService = async (
     );
   }
 
+  if (!microCycleItem.completedAt) {
+    microCycleItem.completedAt = new Date();
+    await microCycleItemRepo.save(microCycleItem);
+  }
+
   const oldSets = await setRepo.find({
     where: { microCycleItem: { id: microCycleItem.id } },
     relations: ["exercise"],
