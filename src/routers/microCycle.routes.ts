@@ -7,6 +7,7 @@ import {
   getMicroCycleByIDController,
   patchMicroCycleController,
   reorderWorkoutsController,
+  modifyWorkoutInMicroCycleController,
 } from "../controllers/microCycle.controller";
 import { skipWorkoutController } from "../controllers/skipWorkout.controller";
 import ensureDataIsValidMiddleware from "../middlewares/ensureDataIsValid.middleware";
@@ -62,6 +63,12 @@ microCycleRoutes.patch(
   "/:microCycleID/workouts/:workoutID/skip",
   ensureUserIsAuthenticatedMiddleware,
   skipWorkoutController
+);
+
+microCycleRoutes.patch(
+  "/:microCycleID/workouts/:workoutID/modify",
+  ensureUserIsAuthenticatedMiddleware,
+  modifyWorkoutInMicroCycleController
 );
 
 microCycleRoutes.patch(
