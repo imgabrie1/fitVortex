@@ -8,6 +8,7 @@ import {
   patchMicroCycleController,
   reorderWorkoutsController,
   modifyWorkoutInMicroCycleController,
+  upsertExerciseNoteController,
 } from "../controllers/microCycle.controller";
 import { skipWorkoutController } from "../controllers/skipWorkout.controller";
 import ensureDataIsValidMiddleware from "../middlewares/ensureDataIsValid.middleware";
@@ -29,71 +30,77 @@ microCycleRoutes.post(
   "",
   ensureUserIsAuthenticatedMiddleware,
   ensureDataIsValidMiddleware(createMicroCycleSchema),
-  createMicroCycleController
+  createMicroCycleController,
 );
 
 microCycleRoutes.patch(
   "/:id",
   ensureUserIsAuthenticatedMiddleware,
   ensureDataIsValidMiddleware(patchMicroCycleSchema),
-  patchMicroCycleController
+  patchMicroCycleController,
 );
 
 microCycleRoutes.patch(
   "/:microCycleID/workouts/:workoutID",
   ensureUserIsAuthenticatedMiddleware,
-  addWorkoutsToMicroCycleController
+  addWorkoutsToMicroCycleController,
 );
 
 microCycleRoutes.patch(
   "/:microCycleID/workouts/:workoutID/record",
   ensureUserIsAuthenticatedMiddleware,
   ensureDataIsValidMiddleware(recordWorkoutSchema),
-  recordWorkoutController
+  recordWorkoutController,
 );
 
 microCycleRoutes.patch(
   "/:microCycleID/workouts/:workoutID/edit",
   ensureUserIsAuthenticatedMiddleware,
   ensureDataIsValidMiddleware(recordWorkoutSchema),
-  editRecordedWorkoutController
+  editRecordedWorkoutController,
 );
 
 microCycleRoutes.patch(
   "/:microCycleID/workouts/:workoutID/skip",
   ensureUserIsAuthenticatedMiddleware,
-  skipWorkoutController
+  skipWorkoutController,
 );
 
 microCycleRoutes.patch(
   "/:microCycleID/workouts/:workoutID/modify",
   ensureUserIsAuthenticatedMiddleware,
-  modifyWorkoutInMicroCycleController
+  modifyWorkoutInMicroCycleController,
 );
 
 microCycleRoutes.patch(
   "/:microCycleID/reorder",
   ensureUserIsAuthenticatedMiddleware,
   ensureDataIsValidMiddleware(reorderWorkoutsSchema),
-  reorderWorkoutsController
+  reorderWorkoutsController,
 );
 
 microCycleRoutes.delete(
   "/:microCycleID",
   ensureUserIsAuthenticatedMiddleware,
-  deleteMicroCycleController
+  deleteMicroCycleController,
 );
 
 microCycleRoutes.get(
   "/:id",
   ensureUserIsAuthenticatedMiddleware,
-  getMicroCycleByIDController
+  getMicroCycleByIDController,
 );
 
 microCycleRoutes.get(
   "",
   ensureUserIsAuthenticatedMiddleware,
-  getAllMicroCycleController
+  getAllMicroCycleController,
+);
+
+microCycleRoutes.patch(
+  "/:microCycleID/workouts/:workoutID/notes",
+  ensureUserIsAuthenticatedMiddleware,
+  upsertExerciseNoteController,
 );
 
 export default microCycleRoutes;

@@ -8,10 +8,11 @@ import { getAllMicroCycleService } from "../services/microCycle/getAllMicro.serv
 import { reorderWorkoutsService } from "../services/microCycle/reorderWorkouts.service";
 import { modifyWorkoutInMicroCycleService } from "../services/microCycle/modifyWorkoutInMicroCycle.service";
 import patchMicroCycleService from "../services/microCycle/patchMicroCycle.service";
+import { upsertExerciseNoteService } from "../services/microCycle/upsertExerciseNote.service";
 
 export const createMicroCycleController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
   const body = req.body;
   const userID = req.id;
@@ -36,7 +37,7 @@ export const createMicroCycleController = async (
 
 export const patchMicroCycleController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
   const { id } = req.params;
 
@@ -49,7 +50,7 @@ export const patchMicroCycleController = async (
 
 export const addWorkoutsToMicroCycleController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
   const { microCycleID, workoutID } = req.params;
   const userID = req.id;
@@ -57,7 +58,7 @@ export const addWorkoutsToMicroCycleController = async (
   const updatedMicroCycle = await addWorkoutsToMicroCycleService(
     microCycleID,
     workoutID,
-    userID
+    userID,
   );
 
   return res.status(200).json(updatedMicroCycle);
@@ -65,7 +66,7 @@ export const addWorkoutsToMicroCycleController = async (
 
 export const deleteMicroCycleController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
   const { microCycleID } = req.params;
   const userID = req.id;
@@ -75,7 +76,7 @@ export const deleteMicroCycleController = async (
 
 export const getMicroCycleByIDController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
   const { id } = req.params;
   const userID = req.id;
@@ -87,7 +88,7 @@ export const getMicroCycleByIDController = async (
 
 export const getAllMicroCycleController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
   const userID = req.id;
 
@@ -98,7 +99,7 @@ export const getAllMicroCycleController = async (
 
 export const reorderWorkoutsController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
   const { microCycleID } = req.params;
   const { orderedIds } = req.body;
@@ -111,7 +112,7 @@ export const reorderWorkoutsController = async (
 
 export const modifyWorkoutInMicroCycleController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
   const { microCycleID, workoutID } = req.params;
   const userID = req.id;
@@ -120,8 +121,26 @@ export const modifyWorkoutInMicroCycleController = async (
     microCycleID,
     workoutID,
     userID,
-    req.body
+    req.body,
   );
 
   return res.status(200).json(updatedMicroCycle);
+};
+
+export const upsertExerciseNoteController = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
+  const { microCycleID, workoutID } = req.params;
+  const userID = req.id;
+  const { exerciseId, notes } = req.body;
+
+  const result = await upsertExerciseNoteService(
+    microCycleID,
+    workoutID,
+    userID,
+    { exerciseId, notes },
+  );
+
+  return res.status(200).json(result);
 };

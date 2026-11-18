@@ -29,6 +29,9 @@ export class MicroCycleItem {
   @OneToMany(() => Set, (set: Set) => set.microCycleItem)
   sets: Set[];
 
+  @Column({ type: "jsonb", default: () => "'{}'" })
+  notesMap: Record<string, string>;
+
   @Column({ type: "int" })
   position: number;
 
