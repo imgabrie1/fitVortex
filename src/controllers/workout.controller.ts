@@ -7,10 +7,11 @@ import { recordWorkoutService } from "../services/microCycle/recordWorkout.servi
 import { editRecordedWorkoutService } from "../services/microCycle/editRecordedWorkout.service";
 import { removeExerciseFromWorkoutService } from "../services/workout/removeExerciseFromWorkout.service";
 import { replaceExerciseInWorkoutService } from "../services/workout/replaceExerciseInWorkout.service";
+import { reorderExercisesInWorkoutService } from "../services/workout/reorderExercisesInWorkout.service";
 
 export const createWorkoutController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
   const workoutData: iWorkout = req.body;
 
@@ -21,7 +22,7 @@ export const createWorkoutController = async (
 
 export const getAllUserWorkoutsController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 5;
@@ -34,7 +35,7 @@ export const getAllUserWorkoutsController = async (
 
 export const patchWorkoutController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
   const { id } = req.params;
 
@@ -45,7 +46,7 @@ export const patchWorkoutController = async (
 
 export const recordWorkoutController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
   const { microCycleID, workoutID } = req.params;
   const workoutData = req.body;
@@ -53,7 +54,7 @@ export const recordWorkoutController = async (
   const updatedMicroCycleItem = await recordWorkoutService(
     microCycleID,
     workoutID,
-    workoutData
+    workoutData,
   );
 
   return res.status(200).json(updatedMicroCycleItem);
@@ -61,7 +62,7 @@ export const recordWorkoutController = async (
 
 export const editRecordedWorkoutController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
   const { microCycleID, workoutID } = req.params;
   const workoutData = req.body;
@@ -69,7 +70,7 @@ export const editRecordedWorkoutController = async (
   const updatedMicroCycleItem = await editRecordedWorkoutService(
     microCycleID,
     workoutID,
-    workoutData
+    workoutData,
   );
 
   return res.status(200).json(updatedMicroCycleItem);
@@ -77,26 +78,41 @@ export const editRecordedWorkoutController = async (
 
 export const removeExerciseFromWorkoutController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
-  const { workoutId, workoutExerciseId } = req.params;
-
-  await removeExerciseFromWorkoutService(workoutId, workoutExerciseId);
-
+  const { microCycleId, workoutId, workoutExerciseId } = req.params;
+  await removeExerciseFromWorkoutService(
+    microCycleId,
+    workoutId,
+    workoutExerciseId,
+  );
   return res.status(204).send();
 };
 
 export const replaceExerciseInWorkoutController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<Response> => {
-  const { workoutId, workoutExerciseId } = req.params;
-
+  const { microCycleId, workoutId, workoutExerciseId } = req.params;
   const updatedWorkout = await replaceExerciseInWorkoutService(
+    microCycleId,
     workoutId,
     workoutExerciseId,
-    req.body
+    req.body,
   );
-
   return res.status(200).json(updatedWorkout);
+};
+
+export const reorderExercisesInWorkoutController = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
+  const { microCycleId, workoutId } = req.params;
+  const { orderedWorkoutExerciseIds } = req.body;
+  await reorderExercisesInWorkoutService(
+    microCycleId,
+    workoutId,
+    orderedWorkoutExerciseIds,
+  );
+  return res.status(204).send();
 };

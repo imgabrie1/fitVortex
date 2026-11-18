@@ -5,6 +5,7 @@ import {
   patchWorkoutController,
   removeExerciseFromWorkoutController,
   replaceExerciseInWorkoutController,
+  reorderExercisesInWorkoutController,
 } from "../controllers/workout.controller";
 import ensureDataIsValidMiddleware from "../middlewares/ensureDataIsValid.middleware";
 import { updateWorkoutSchema, workoutSchema } from "../schemas/workout.schema";
@@ -15,32 +16,38 @@ const workoutRoutes: Router = Router();
 workoutRoutes.post(
   "",
   ensureDataIsValidMiddleware(workoutSchema),
-  createWorkoutController
+  createWorkoutController,
 );
 
 workoutRoutes.get(
   "/:id",
   ensureUserIsAuthenticatedMiddleware,
-  getAllUserWorkoutsController
+  getAllUserWorkoutsController,
 );
 
 workoutRoutes.patch(
   "/:id",
   ensureUserIsAuthenticatedMiddleware,
   ensureDataIsValidMiddleware(updateWorkoutSchema),
-  patchWorkoutController
+  patchWorkoutController,
 );
 
 workoutRoutes.delete(
-  "/:workoutId/exercise/:workoutExerciseId",
+  "/micro-cycle/:microCycleId/workout/:workoutId/exercise/:workoutExerciseId",
   ensureUserIsAuthenticatedMiddleware,
-  removeExerciseFromWorkoutController
+  removeExerciseFromWorkoutController,
 );
 
 workoutRoutes.patch(
-  "/:workoutId/exercise/:workoutExerciseId",
+  "/micro-cycle/:microCycleId/workout/:workoutId/exercise/:workoutExerciseId",
   ensureUserIsAuthenticatedMiddleware,
-  replaceExerciseInWorkoutController
+  replaceExerciseInWorkoutController,
+);
+
+workoutRoutes.patch(
+  "/micro-cycle/:microCycleId/workout/:workoutId/reorder-exercises",
+  ensureUserIsAuthenticatedMiddleware,
+  reorderExercisesInWorkoutController,
 );
 
 export default workoutRoutes;
